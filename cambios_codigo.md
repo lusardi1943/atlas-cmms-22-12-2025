@@ -241,3 +241,11 @@ Este documento contiene los cambios realizados para mejorar el sistema.
     - **Derivación de Ubicación**: En `CreateWorkOrderScreen.tsx`, se implementó lógica para que, si se selecciona un activo, el sistema auto-complete la ubicación asociada al equipo.
     - **Navegación Contextual**: Se aseguraron las referencias cruzadas en los menús de detalles para mantener la integridad de los datos durante la creación.
 - **Impacto**: Reducción significativa de clics y errores humanos. El técnico puede ahora saltar directamente de la inspección de un equipo a la creación de su orden de mantenimiento con toda la información relevante ya pre-cargada.
+
+## 25. Ordenación de Activos por Nombre de Ubicación (Móvil)
+- **Problema**: Los activos se mostraban en un orden inconsistente (a veces por ID o nombre de activo), lo que dificultaba al personal de campo encontrar equipos que están físicamente en la misma zona.
+- **Solución**:
+    - **Ordenación en Frontend**: Se implementó una lógica de ordenamiento personalizada en `AssetsScreen.tsx` que fuerza la organización de la A a la Z basándose en `asset.location.name`.
+    - **Criterio Secundario**: En casos donde los activos pertenecen a la misma ubicación, se aplica un orden alfabético por el nombre del activo para mantener la coherencia.
+    - **Consistencia Global**: El cambio afecta tanto a la navegación por jerarquías (carpetas) como a los resultados de búsqueda en modo lista.
+- **Impacto**: Organización optimizada para el trabajo en campo. Los técnicos visualizan los equipos agrupados de forma natural por su ubicación física, mejorando la velocidad de operación.

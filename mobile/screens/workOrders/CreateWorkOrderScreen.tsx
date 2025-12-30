@@ -11,6 +11,10 @@ import { getImageAndFiles } from '../../utils/overall';
 import { useDispatch } from '../../store';
 import { addWorkOrder } from '../../slices/workOrder';
 import { CustomSnackBarContext } from '../../contexts/CustomSnackBarContext';
+/**
+ * Utilidades para formatear valores y obtener campos dinámicos de la Orden de Trabajo.
+ * Se utiliza para mantener la consistencia entre la UI y el modelo de datos del backend.
+ */
 import { formatWorkOrderValues, getWorkOrderFields } from '../../utils/fields';
 import { assetStatuses } from '../../models/asset';
 import { useTheme } from 'react-native-paper';
@@ -71,7 +75,12 @@ export default function CreateWorkOrderScreen({
             }
             : route.params?.asset?.location
               ? {
-                // Derivación automática: si solo viene el activo, usamos su ubicación.
+                /**
+                 * Derivación automática de ubicación: 
+                 * Si se proporciona un activo pero no una ubicación explícita, el sistema
+                 * utiliza la ubicación asociada al activo para pre-poblar el campo.
+                 * Esto mejora la experiencia de usuario al evitar selecciones redundantes.
+                 */
                 label: route.params.asset.location.name,
                 value: route.params.asset.location.id.toString()
               }

@@ -267,7 +267,28 @@ export default function AssetsScreen({
        */
       result = assetsHierarchy.filter(asset => asset.hierarchy.length === 1);
     }
-    setCurrentAssets(result);
+    /**
+     * MEJORA DE ORGANIZACIÓN OPERATIVA:
+     * Forzamos la ordenación A-Z por nombre de ubicación en el frontend.
+     * Racional: Los técnicos necesitan ver los equipos agrupados por su sitio físico
+     * para optimizar sus rutas de trabajo.
+     * Impacto: Consistencia visual independientemente de cómo devuelva los datos la API.
+     */
+    const sortedResult = [...result].sort((a, b) => {
+      const locationA = a.location?.name?.toLowerCase() || '';
+      const locationB = b.location?.name?.toLowerCase() || '';
+      if (locationA < locationB) return -1;
+      if (locationA > locationB) return 1;
+
+      /**
+       * Criterio Secundario: Si están en la misma ubicación, ordenamos por nombre 
+       * del activo para mantener un listado predecible.
+       */
+      const nameA = a.name?.toLowerCase() || '';
+      const nameB = b.name?.toLowerCase() || '';
+      return nameA.localeCompare(nameB);
+    });
+    setCurrentAssets(sortedResult);
   }, [assetsHierarchy, route.params?.id]);
 
   const handleViewChildren = (asset) => {
