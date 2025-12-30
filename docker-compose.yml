@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
   api:
     build: ./api
-    image: intelloop/atlas-cmms-backend
+    image: lusardi1943/atlas-cmms-backend:V6.22.12.25
     container_name: atlas-cmms-backend
     depends_on:
       - postgres
@@ -60,7 +60,7 @@ services:
       - "8080:8080"
   frontend:
     build: ./frontend
-    image: intelloop/atlas-cmms-frontend
+    image: lusardi1943/atlas-cmms-frontend:V6.22.12.25
     container_name: atlas-cmms-frontend
     environment:
         API_URL: ${PUBLIC_API_URL}
