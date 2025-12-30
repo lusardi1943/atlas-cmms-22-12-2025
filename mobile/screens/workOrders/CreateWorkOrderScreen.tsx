@@ -66,18 +66,24 @@ export default function CreateWorkOrderScreen({
           dueDate: initialDueDate,
           location: route.params?.location
             ? {
-                label: route.params.location.name,
-                value: route.params.location.id.toString()
+              label: route.params.location.name,
+              value: route.params.location.id.toString()
+            }
+            : route.params?.asset?.location
+              ? {
+                // Derivación automática: si solo viene el activo, usamos su ubicación.
+                label: route.params.asset.location.name,
+                value: route.params.asset.location.id.toString()
               }
-            : null,
+              : null,
           asset: route.params?.asset
             ? {
-                label: route.params.asset.name,
-                value: route.params.asset.id.toString()
-              }
+              label: route.params.asset.name,
+              value: route.params.asset.id.toString()
+            }
             : null
         }}
-        onChange={({ field, e }) => {}}
+        onChange={({ field, e }) => { }}
         onSubmit={async (values) => {
           let formattedValues = formatWorkOrderValues(values);
           return new Promise<void>((resolve, rej) => {

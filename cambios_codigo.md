@@ -233,3 +233,11 @@ Este documento contiene los cambios realizados para mejorar el sistema.
         - Se implementó un indicador de **"Cargando..."** y un mensaje de **"Sin resultados"** para mejorar la retroalimentación al usuario.
         - La app ahora confía plenamente en el filtrado realizado por el servidor para el primer nivel de la jerarquía, lo que agiliza drásticamente la visualización.
 - **Impacto**: Una experiencia de navegación instantánea y fiable. El personal de campo puede encontrar sus equipos en segundos sin esperas ni pantallas vacías, garantizando que el diseño jerárquico sea funcional y eficiente en condiciones reales de uso.
+
+## 24. Pre-poblamiento de Contexto en Órdenes de Trabajo (Móvil)
+- **Problema**: Al crear una nueva Orden de Trabajo desde el móvil, los campos de "Ubicación" y "Activo" aparecían vacíos aunque el usuario estuviera viendo el detalle de un equipo o sitio específico, obligándole a re-seleccionar los datos.
+- **Solución**:
+    - **Detección de Pantalla Activa**: Se actualizó el botón global (+) (`CreateEntitiesSheet.tsx`) para identificar si el usuario está en `AssetDetails`, `LocationDetails` o una lista de `Assets` filtrada, pasando automáticamente estos datos al formulario de creación.
+    - **Derivación de Ubicación**: En `CreateWorkOrderScreen.tsx`, se implementó lógica para que, si se selecciona un activo, el sistema auto-complete la ubicación asociada al equipo.
+    - **Navegación Contextual**: Se aseguraron las referencias cruzadas en los menús de detalles para mantener la integridad de los datos durante la creación.
+- **Impacto**: Reducción significativa de clics y errores humanos. El técnico puede ahora saltar directamente de la inspección de un equipo a la creación de su orden de mantenimiento con toda la información relevante ya pre-cargada.

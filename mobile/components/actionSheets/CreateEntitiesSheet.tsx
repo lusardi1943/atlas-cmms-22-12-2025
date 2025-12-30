@@ -13,6 +13,7 @@ import { PermissionEntity } from '../../models/role';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { CustomSnackBarContext } from '../../contexts/CustomSnackBarContext';
 import { IconSource } from 'react-native-paper/lib/typescript/components/Icon';
+import { navigationRef } from '../../navigation/RootNavigation';
 
 export default function CreateEntitiesSheet(
   props: SheetProps<{ navigation: any }>
@@ -28,49 +29,49 @@ export default function CreateEntitiesSheet(
     goTo: keyof RootStackParamList;
     entity: PermissionEntity;
   }[] = [
-    {
-      title: t('work_order'),
-      icon: 'clipboard-text-outline',
-      goTo: 'AddWorkOrder',
-      entity: PermissionEntity.WORK_ORDERS
-    },
-    {
-      title: t('request'),
-      icon: 'inbox-arrow-down-outline',
-      goTo: 'AddRequest',
-      entity: PermissionEntity.REQUESTS
-    },
-    {
-      title: t('asset'),
-      icon: 'package-variant-closed',
-      goTo: 'AddAsset',
-      entity: PermissionEntity.ASSETS
-    },
-    {
-      title: t('location'),
-      icon: 'map-marker-outline',
-      goTo: 'AddLocation',
-      entity: PermissionEntity.LOCATIONS
-    },
-    {
-      title: t('part'),
-      icon: 'archive-outline',
-      goTo: 'AddPart',
-      entity: PermissionEntity.PARTS_AND_MULTIPARTS
-    },
-    {
-      title: t('meter'),
-      icon: 'gauge',
-      goTo: 'AddMeter',
-      entity: PermissionEntity.METERS
-    },
-    {
-      title: t('user'),
-      icon: 'account-outline',
-      goTo: 'AddUser',
-      entity: PermissionEntity.PEOPLE_AND_TEAMS
-    }
-  ];
+      {
+        title: t('work_order'),
+        icon: 'clipboard-text-outline',
+        goTo: 'AddWorkOrder',
+        entity: PermissionEntity.WORK_ORDERS
+      },
+      {
+        title: t('request'),
+        icon: 'inbox-arrow-down-outline',
+        goTo: 'AddRequest',
+        entity: PermissionEntity.REQUESTS
+      },
+      {
+        title: t('asset'),
+        icon: 'package-variant-closed',
+        goTo: 'AddAsset',
+        entity: PermissionEntity.ASSETS
+      },
+      {
+        title: t('location'),
+        icon: 'map-marker-outline',
+        goTo: 'AddLocation',
+        entity: PermissionEntity.LOCATIONS
+      },
+      {
+        title: t('part'),
+        icon: 'archive-outline',
+        goTo: 'AddPart',
+        entity: PermissionEntity.PARTS_AND_MULTIPARTS
+      },
+      {
+        title: t('meter'),
+        icon: 'gauge',
+        goTo: 'AddMeter',
+        entity: PermissionEntity.METERS
+      },
+      {
+        title: t('user'),
+        icon: 'account-outline',
+        goTo: 'AddUser',
+        entity: PermissionEntity.PEOPLE_AND_TEAMS
+      }
+    ];
   return (
     <ActionSheet ref={actionSheetRef}>
       <View style={{ paddingHorizontal: 5, paddingVertical: 15 }}>
@@ -89,7 +90,32 @@ export default function CreateEntitiesSheet(
                   title={entity.title}
                   left={() => <List.Icon icon={entity.icon} />}
                   onPress={() => {
-                    props.payload.navigation.navigate(entity.goTo);
+                    const currentRoute = navigationRef.getCurrentRoute();
+                    const routeParams = currentRoute?.params as any;
+                    let params: any = {};
+                    /**
+                     * Detección de contexto global:
+                     * Si el usuario está creando una OT desde el botón (+), intentamos capturar
+                     * si está viendo detalles de un activo o ubicación para pre-poblar el formulario.
+                     */
+                    if (entity.goTo === 'AddWorkOrder') {
+                      if (currentRoute?.name === 'AssetDetails') {
+                        params.asset =
+                          routeParams?.assetProp || routeParams?.asset;
+                      } else if (currentRoute?.name === 'LocationDetails') {
+                        params.location =
+                          routeParams?.locationProp || routeParams?.location;
+                      } else if (
+                        currentRoute?.name === 'Assets' &&
+                        routeParams?.locationId
+                      ) {
+                        params.location = {
+                          id: routeParams.locationId,
+                          name: routeParams.locationName
+                        };
+                      }
+                    }
+                    props.payload.navigation.navigate(entity.goTo, params);
                     actionSheetRef.current.hide();
                   }}
                 />
