@@ -5,7 +5,9 @@ import {
   DialogContent,
   DialogTitle,
   Drawer,
+  FormControlLabel,
   Stack,
+  Switch,
   Typography,
   useTheme
 } from '@mui/material';
@@ -32,26 +34,31 @@ import {
   disableUser,
   editUser,
   editUserRole,
+  enableUser,
   getSingleUser,
-  getUsers
+  getUsers,
+  deleteUser
 } from '../../../slices/user';
 import { OwnUser } from '../../../models/user';
 import { PermissionEntity, Role } from '../../../models/owns/role';
 import EditTwoToneIcon from '@mui/icons-material/EditTwoTone';
+import DeleteTwoToneIcon from '@mui/icons-material/DeleteTwoTone';
 import useAuth from '../../../hooks/useAuth';
 import Form from '../components/form';
 import * as Yup from 'yup';
 import { IField } from '../type';
 import { formatSelect } from '../../../utils/formatters';
 import { CompanySettingsContext } from '../../../contexts/CompanySettingsContext';
-import { SearchCriteria, SortDirection } from '../../../models/owns/page';
+import { FilterField, SearchCriteria, SortDirection } from '../../../models/owns/page';
 import { onSearchQueryChange } from '../../../utils/overall';
 import SearchInput from '../components/SearchInput';
 import CancelIcon from '@mui/icons-material/Cancel';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useGridApiRef } from '@mui/x-data-grid-pro';
 import useGridStatePersist from '../../../hooks/useGridStatePersist';
 import InviteUserDialog from './components/InviteUserDialog';
+import DeactivateUserDialog from './components/DeactivateUserDialog';
 import { isEmailVerificationEnabled } from '../../../config';
 
 interface PropsType {
@@ -69,8 +76,25 @@ const People = ({ openModal, handleCloseModal }: PropsType) => {
   const { hasEditPermission, user } = useAuth();
   const { users, loadingGet, singleUser } = useSelector((state) => state.users);
   const [openDrawerFromUrl, setOpenDrawerFromUrl] = useState<boolean>(false);
+  const [showDisabled, setShowDisabled] = useState<boolean>(false);
+  const initialFilter: FilterField | undefined = useMemo(() => {
+    return {
+      field: 'enabled',
+      value: !showDisabled,
+      operation: 'eq'
+    };
+  }, [showDisabled]);
+
+  // Sincroniza el filtro de usuarios (habilitados/deshabilitados) con la selección de la UI
+  useEffect(() => {
+    setCriteria((prev) => ({
+      ...prev,
+      filterFields: [initialFilter]
+    }));
+  }, [initialFilter]);
+
   const [criteria, setCriteria] = useState<SearchCriteria>({
-    filterFields: [],
+    filterFields: [initialFilter],
     pageSize: 10,
     pageNum: 0,
     direction: 'DESC'
@@ -82,6 +106,7 @@ const People = ({ openModal, handleCloseModal }: PropsType) => {
   );
   const [openUpdateModal, setOpenUpdateModal] = useState<boolean>(false);
   const [openDisableModal, setOpenDisableModal] = useState<boolean>(false);
+  const [openDeleteModal, setOpenDeleteModal] = useState<boolean>(false);
 
   const onQueryChange = (event) => {
     onSearchQueryChange<User>(event, criteria, setCriteria, [
@@ -130,11 +155,33 @@ const People = ({ openModal, handleCloseModal }: PropsType) => {
       setOpenDisableModal(true);
     }
   };
+  const handleOpenDelete = (id: number) => {
+    const foundUser = users.content.find((user) => user.id === id);
+    if (foundUser) {
+      setCurrentUser(foundUser);
+      setOpenDeleteModal(true);
+    }
+  };
   const handleCloseDetails = () => {
     window.history.replaceState(null, 'User', `/app/people-teams/people`);
     setDetailDrawerOpen(false);
   };
   const defautfields: Array<IField> = [
+    {
+      name: 'firstName',
+      type: 'text',
+      label: t('first_name')
+    },
+    {
+      name: 'lastName',
+      type: 'text',
+      label: t('last_name')
+    },
+    {
+      name: 'email',
+      type: 'text',
+      label: t('email')
+    },
     {
       name: 'rate',
       type: 'number',
@@ -149,12 +196,12 @@ const People = ({ openModal, handleCloseModal }: PropsType) => {
     ...(isEmailVerificationEnabled
       ? []
       : [
-          {
-            name: 'password',
-            type: 'text',
-            label: t('password_leave_empty_if_you_dont_want_to_change')
-          } as IField
-        ])
+        {
+          name: 'password',
+          type: 'text',
+          label: t('password_leave_empty_if_you_dont_want_to_change')
+        } as IField
+      ])
   ];
   const getFields = () => {
     let fields = [...defautfields];
@@ -194,27 +241,32 @@ const People = ({ openModal, handleCloseModal }: PropsType) => {
           <Form
             fields={getFields()}
             validation={Yup.object().shape({
+              email: Yup.string()
+                .email(t('invalid_email'))
+                .required(t('required_email')),
               password: Yup.string().min(8, t('invalid_password')).nullable()
             })}
             submitText={t('save')}
             values={{
+              email: currentUser?.email,
               rate: currentUser?.rate,
               role: currentUser
                 ? {
-                    label:
-                      currentUser.role.code === 'USER_CREATED'
-                        ? currentUser.role.name
-                        : t(`${currentUser.role.code}_name`),
-                    value: currentUser.role.id
-                  }
+                  label:
+                    currentUser.role.code === 'USER_CREATED'
+                      ? currentUser.role.name
+                      : t(`${currentUser.role.code}_name`),
+                  value: currentUser.role.id
+                }
                 : null,
               password: null
             }}
-            onChange={({ field, e }) => {}}
+            onChange={({ field, e }) => { }}
             onSubmit={async (values) => {
               return dispatch(
                 editUser(currentUser.id, {
                   ...currentUser,
+                  email: values.email,
                   rate: values.rate ?? currentUser.rate,
                   newPassword: values.password ?? null
                 })
@@ -326,31 +378,72 @@ const People = ({ openModal, handleCloseModal }: PropsType) => {
         getFormattedDate(params.value)
     },
     {
+      field: 'deactivatedUntil',
+      headerName: t('deactivated_until'),
+      width: 150,
+      valueGetter: (params: GridValueGetterParams<string>) =>
+        params.value ? getFormattedDate(params.value) : '-'
+    },
+    {
       field: 'actions',
       type: 'actions',
       headerName: t('actions'),
       description: t('actions'),
       getActions: (params: GridRowParams<OwnUser>) => {
+        // Verifica si el usuario actual tiene permisos para editar personas y equipos
+        if (!hasEditPermission(PermissionEntity.PEOPLE_AND_TEAMS, params.row))
+          return [];
         let actions = [
           <GridActionsCellItem
             key="edit"
             icon={<EditTwoToneIcon fontSize="small" color={'primary'} />}
             onClick={() => handleOpenUpdate(Number(params.id))}
             label={t('edit')}
-          />,
-          ...(params.row.enabled && !params.row.ownsCompany
-            ? [
-                <GridActionsCellItem
-                  key="disable"
-                  icon={<CancelIcon fontSize="small" color={'error'} />}
-                  onClick={() => handleOpenDisable(Number(params.id))}
-                  label={t('disable')}
-                />
-              ]
-            : [])
+            showInMenu={false}
+          />
         ];
-        if (!hasEditPermission(PermissionEntity.PEOPLE_AND_TEAMS, params.row))
-          actions = [];
+
+        // No permitir habilitar/deshabilitar/eliminar al dueño de la compañía
+        if (!params.row.ownsCompany) {
+          if (params.row.enabled) {
+            // Acción para deshabilitar usuario activo
+            actions.push(
+              <GridActionsCellItem
+                key="disable"
+                icon={<CancelIcon fontSize="small" color={'error'} />}
+                onClick={() => handleOpenDisable(Number(params.id))}
+                label={t('disable')}
+                showInMenu={false}
+              />
+            );
+          } else {
+            // Acción para habilitar usuario inactivo (reactivación)
+            actions.push(
+              <GridActionsCellItem
+                key="enable"
+                icon={<CheckCircleIcon fontSize="small" color={'success'} />}
+                onClick={() => {
+                  dispatch(enableUser(Number(params.id))).then(() =>
+                    showSnackBar(t('user_enabled_success'), 'success')
+                  );
+                }}
+                label={t('enable')}
+                showInMenu={false}
+              />
+            );
+          }
+          // Acción para eliminar usuario (soft-delete)
+          actions.push(
+            <GridActionsCellItem
+              key="delete"
+              icon={<DeleteTwoToneIcon fontSize="small" color={'error'} />}
+              onClick={() => handleOpenDelete(Number(params.id))}
+              label={t('delete')}
+              showInMenu={false}
+            />
+          );
+        }
+
         return actions;
       }
     }
@@ -422,10 +515,19 @@ const People = ({ openModal, handleCloseModal }: PropsType) => {
         p: 2
       }}
     >
-      <Stack direction="row" width="95%">
-        <Box sx={{ my: 0.5 }}>
+      <Stack direction="row" width="95%" justifyContent="space-between" alignItems="center">
+        <Box sx={{ my: 0.5, flexGrow: 1 }}>
           <SearchInput onChange={debouncedQueryChange} />
         </Box>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showDisabled}
+              onChange={(e) => setShowDisabled(e.target.checked)}
+            />
+          }
+          label={t('view_disabled_users')}
+        />
       </Stack>
       {RenderPeopleList()}
 
@@ -446,19 +548,34 @@ const People = ({ openModal, handleCloseModal }: PropsType) => {
           dispatch(getUsers(criteria));
         }}
       />
+      {currentUser && (
+        <DeactivateUserDialog
+          open={openDisableModal}
+          onClose={() => setOpenDisableModal(false)}
+          userName={`${currentUser.firstName} ${currentUser.lastName}`}
+          onConfirm={(date) => {
+            dispatch(disableUser(currentUser.id, date)).then(() => {
+              setOpenDisableModal(false);
+              showSnackBar(t('user_disabled_success'), 'success');
+            });
+          }}
+        />
+      )}
       <ConfirmDialog
-        open={openDisableModal}
+        open={openDeleteModal}
         onCancel={() => {
-          setOpenDisableModal(false);
+          setOpenDeleteModal(false);
         }}
         onConfirm={() => {
-          dispatch(disableUser(currentUser.id)).then(() => {
-            setOpenDisableModal(false);
-            showSnackBar(t('user_disabled_success'), 'success');
-          });
+          if (currentUser) {
+            dispatch(deleteUser(currentUser.id)).then(() => {
+              setOpenDeleteModal(false);
+              showSnackBar(t('user_deleted_success'), 'success');
+            });
+          }
         }}
-        confirmText={t('disable')}
-        question={t('confirm_disable_user', {
+        confirmText={t('delete')}
+        question={t('confirm_delete_user', {
           user: `${currentUser?.firstName} ${currentUser?.lastName}`
         })}
       />

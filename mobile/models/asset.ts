@@ -77,6 +77,8 @@ export interface AssetMiniDTO {
   name: string;
   customId: string;
   parentId: number;
+  locationId: number;
+  locationName: string;
 }
 
 export const getAssetStatusConfig = (

@@ -24,4 +24,10 @@ public class UserPatchDTO {
     private File image;
 
     private String newPassword;
+
+    private String email;
+
+    private Boolean enabled;
+
+    private java.util.Date deactivatedUntil;
 }

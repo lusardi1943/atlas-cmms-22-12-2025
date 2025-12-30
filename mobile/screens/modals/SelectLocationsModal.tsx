@@ -14,12 +14,13 @@ import { useDispatch, useSelector } from '../../store';
 import { LocationMiniDTO } from '../../models/location';
 import { getLocationsMini } from '../../slices/location';
 import { Checkbox, Divider, Searchbar, Text, useTheme } from 'react-native-paper';
+import { includesNormalized } from '../../utils/strings';
 
 export default function SelectLocationsModal({
-                                               navigation,
-                                               route
-                                             }: RootStackScreenProps<'SelectLocations'>) {
-  const { onChange, selected, multiple } = route.params;
+  navigation,
+  route
+}: RootStackScreenProps<'SelectLocations'>) {
+  const { onChange, selected, multiple, leafOnly } = route.params;
   const theme = useTheme();
   const { t }: { t: any } = useTranslation();
   const dispatch = useDispatch();
@@ -105,36 +106,43 @@ export default function SelectLocationsModal({
           backgroundColor: theme.colors.background
         }}
       >
-        {locationsMini.filter(mini => mini.name.toLowerCase().includes(searchQuery.toLowerCase().trim())).map((location) => (
-          <TouchableOpacity
-            onPress={() => {
-              toggle(location.id);
-            }}
-            key={location.id}
-            style={{
-              borderRadius: 5,
-              padding: 15,
-              backgroundColor: 'white',
-              display: 'flex',
-              flexDirection: 'row',
-              elevation: 2,
-              alignItems: 'center'
-            }}
-          >
-            {multiple && (
-              <Checkbox
-                status={
-                  selectedIds.includes(location.id) ? 'checked' : 'unchecked'
-                }
-                onPress={() => {
-                  toggle(location.id);
-                }}
-              />
-            )}
-            <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>{location.name}</Text>
-            <Divider />
-          </TouchableOpacity>
-        ))}
+        {locationsMini
+          .filter(
+            (mini) =>
+              includesNormalized(mini.name, searchQuery) &&
+              (!leafOnly || !mini.hasChildren)
+          )
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((location) => (
+            <TouchableOpacity
+              onPress={() => {
+                toggle(location.id);
+              }}
+              key={location.id}
+              style={{
+                borderRadius: 5,
+                padding: 15,
+                backgroundColor: 'white',
+                display: 'flex',
+                flexDirection: 'row',
+                elevation: 2,
+                alignItems: 'center'
+              }}
+            >
+              {multiple && (
+                <Checkbox
+                  status={
+                    selectedIds.includes(location.id) ? 'checked' : 'unchecked'
+                  }
+                  onPress={() => {
+                    toggle(location.id);
+                  }}
+                />
+              )}
+              <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>{location.name}</Text>
+              <Divider />
+            </TouchableOpacity>
+          ))}
       </ScrollView>
     </View>
   );

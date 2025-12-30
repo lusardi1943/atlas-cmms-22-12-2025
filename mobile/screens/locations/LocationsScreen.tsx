@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import useAuth from '../../hooks/useAuth';
 import { PermissionEntity } from '../../models/role';
 import {
+  locationActions,
   getLocationChildren,
   getLocations,
   getMoreLocations
@@ -22,7 +23,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import Location from '../../models/location';
 import { IconSource } from 'react-native-paper/lib/typescript/components/Icon';
-import { isCloseToBottom, onSearchQueryChange } from '../../utils/overall';
+import {
+  getNewCriteriaOnSearch,
+  isCloseToBottom
+} from '../../utils/overall';
 import { RootStackScreenProps } from '../../types';
 import { useDebouncedEffect } from '../../hooks/useDebouncedEffect';
 import Tag from '../../components/Tag';
@@ -51,14 +55,15 @@ export default function LocationsScreen({
       filterFields: defaultFilterFields,
       pageSize: 10,
       pageNum: 0,
-      direction: 'DESC'
+      sortField: 'name',
+      direction: 'ASC'
     };
     let newFilterFields = [...initialCriteria.filterFields];
     filterFields.forEach(
       (filterField) =>
-        (newFilterFields = newFilterFields.filter(
-          (ff) => ff.field != filterField.field
-        ))
+      (newFilterFields = newFilterFields.filter(
+        (ff) => ff.field != filterField.field
+      ))
     );
     return {
       ...initialCriteria,
@@ -70,17 +75,25 @@ export default function LocationsScreen({
   );
   useEffect(() => {
     if (hasViewPermission(PermissionEntity.LOCATIONS) && view === 'list') {
+      // Ordenación por defecto A-Z por nombre para Localizaciones en Mobile.
+      // Impacto: Organización clara de los sitios en la aplicación móvil.
       dispatch(
         getLocations({
           ...criteria,
           pageSize: 10,
           pageNum: 0,
-          direction: 'DESC'
+          sortField: 'name',
+          direction: 'ASC'
         })
       );
     }
-  }, [criteria]);
+    // Se añade 'view' como dependencia para asegurar que la búsqueda se dispare al cambiar de jerarquía a lista.
+  }, [criteria, view]);
   const [currentLocations, setCurrentLocations] = useState([]);
+  useEffect(() => {
+    // Limpiar caché de búsqueda al entrar en la pantalla para asegurar un estado fresco.
+    dispatch(locationActions.clearLocations());
+  }, []);
   useEffect(() => {
     if (
       route.params?.id &&
@@ -102,14 +115,20 @@ export default function LocationsScreen({
   };
 
   const onQueryChange = (query) => {
-    onSearchQueryChange<Location>(
-      query,
-      criteria,
-      setCriteria,
-      setSearchQuery,
-      ['name', 'address']
-    );
-    setView('list');
+    setSearchQuery(query);
+    if (query) {
+      // Se utiliza actualización funcional de estado (prevCriteria) para evitar cierres obsoletos (stale closures)
+      // durante el debounce, asegurando que la búsqueda siempre use los últimos filtros.
+      setCriteria((prevCriteria) =>
+        getNewCriteriaOnSearch(query, prevCriteria, ['name', 'address'])
+      );
+      setView('list');
+    } else {
+      // Si la búsqueda se limpia, volvemos a la vista de jerarquía y limpiamos la caché.
+      setView('hierarchy');
+      setCriteria(getCriteriaFromFilterFields([]));
+      dispatch(locationActions.clearLocations());
+    }
   };
   useDebouncedEffect(
     () => {
@@ -125,14 +144,14 @@ export default function LocationsScreen({
       result = locationsHierarchy.filter((location, index) => {
         return (
           location.hierarchy[location.hierarchy.length - 2] ===
-            route.params.id && location.id !== route.params.id
+          route.params.id && location.id !== route.params.id
         );
       });
     } else
       result = locationsHierarchy.filter(
         (location) => location.hierarchy.length === 1
       );
-    setCurrentLocations(result);
+    setCurrentLocations(result.sort((a, b) => a.name.localeCompare(b.name)));
   }, [locationsHierarchy]);
 
   return (

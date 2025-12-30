@@ -17,4 +17,6 @@ public class LocationMiniDTO {
 
     private Long parentId;
 
+    private boolean hasChildren;
+
 }

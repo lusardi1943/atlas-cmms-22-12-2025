@@ -1,8 +1,6 @@
 import { Grid } from '@mui/material';
-import * as React from 'react';
 import RegisterJWT from '../../../pages/Auth/Register/RegisterJWT';
-import { number } from 'yup';
-import { getUsers } from '../../../../slices/user';
+import { getUsers, createUserMember } from '../../../../slices/user';
 import { useDispatch } from '../../../../store';
 
 export default function CreateUser({
@@ -15,11 +13,19 @@ export default function CreateUser({
   onRefreshUsers: () => void;
 }) {
   const dispatch = useDispatch();
+
+  // Handler for direct user creation by admins
+  // Uses createUserMember action to bypassing invitation flow
+  const handleCreateUser = async (values: any) => {
+    await dispatch(createUserMember(values));
+  };
+
   return (
     <Grid container sx={{ pb: 3 }}>
       <RegisterJWT
         role={roleId}
         invitationMode
+        onSubmit={handleCreateUser}
         onInvitationSuccess={() => {
           onClose();
           onRefreshUsers();

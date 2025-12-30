@@ -124,74 +124,84 @@ export const reducer = slice.reducer;
 
 export const getUsers =
   (criteria: SearchCriteria): AppThunk =>
-  async (dispatch) => {
-    try {
-      dispatch(slice.actions.setLoadingGet({ loading: true }));
-      const users = await api.post<Page<UserResponseDTO>>(
-        `${basePath}/search`,
-        criteria
-      );
-      dispatch(slice.actions.getUsers({ users }));
-    } finally {
-      dispatch(slice.actions.setLoadingGet({ loading: false }));
-    }
-  };
+    async (dispatch) => {
+      try {
+        dispatch(slice.actions.setLoadingGet({ loading: true }));
+        const users = await api.post<Page<UserResponseDTO>>(
+          `${basePath}/search`,
+          criteria
+        );
+        dispatch(slice.actions.getUsers({ users }));
+      } finally {
+        dispatch(slice.actions.setLoadingGet({ loading: false }));
+      }
+    };
 
 export const getSingleUser =
   (id: number): AppThunk =>
-  async (dispatch) => {
-    dispatch(slice.actions.setLoadingGet({ loading: true }));
-    const user = await api.get<UserResponseDTO>(`${basePath}/${id}`);
-    dispatch(slice.actions.getSingleUser({ user }));
-    dispatch(slice.actions.setLoadingGet({ loading: false }));
-  };
+    async (dispatch) => {
+      dispatch(slice.actions.setLoadingGet({ loading: true }));
+      const user = await api.get<UserResponseDTO>(`${basePath}/${id}`);
+      dispatch(slice.actions.getSingleUser({ user }));
+      dispatch(slice.actions.setLoadingGet({ loading: false }));
+    };
 
 export const editUser =
   (id: number, user): AppThunk =>
-  async (dispatch) => {
-    const userResponse = await api.patch<UserResponseDTO>(
-      `${basePath}/${id}`,
-      user
-    );
-    dispatch(slice.actions.editUser({ user: userResponse }));
-  };
+    async (dispatch) => {
+      const userResponse = await api.patch<UserResponseDTO>(
+        `${basePath}/${id}`,
+        user
+      );
+      dispatch(slice.actions.editUser({ user: userResponse }));
+    };
 
 export const disableUser =
+  (id: number, deactivatedUntil?: Date | null): AppThunk =>
+    async (dispatch) => {
+      const userResponse = await api.patch<UserResponseDTO>(
+        `${basePath}/${id}/disable`,
+        { deactivatedUntil }
+      );
+      dispatch(slice.actions.editUser({ user: userResponse }));
+    };
+
+export const enableUser =
   (id: number): AppThunk =>
-  async (dispatch) => {
-    const userResponse = await api.patch<UserResponseDTO>(
-      `${basePath}/${id}/disable`,
-      {}
-    );
-    dispatch(slice.actions.editUser({ user: userResponse }));
-  };
+    async (dispatch) => {
+      const userResponse = await api.patch<UserResponseDTO>(
+        `${basePath}/${id}/enable`,
+        {}
+      );
+      dispatch(slice.actions.editUser({ user: userResponse }));
+    };
 export const editUserRole =
   (id: number, roleId: number): AppThunk =>
-  async (dispatch) => {
-    const userResponse = await api.patch<UserResponseDTO>(
-      `${basePath}/${id}/role?role=${roleId}`,
-      {}
-    );
-    dispatch(slice.actions.editUser({ user: userResponse }));
-  };
+    async (dispatch) => {
+      const userResponse = await api.patch<UserResponseDTO>(
+        `${basePath}/${id}/role?role=${roleId}`,
+        {}
+      );
+      dispatch(slice.actions.editUser({ user: userResponse }));
+    };
 export const getSingleUserMini =
   (id: number): AppThunk =>
-  async (dispatch) => {
-    const user = await api.get<UserResponseDTO>(`users/${id}`);
-    dispatch(slice.actions.getSingleUserMini({ user, id }));
-  };
+    async (dispatch) => {
+      const user = await api.get<UserResponseDTO>(`users/${id}`);
+      dispatch(slice.actions.getSingleUserMini({ user, id }));
+    };
 export const getUsersMini =
   (withRequesters?: boolean): AppThunk =>
-  async (dispatch) => {
-    const query =
-      withRequesters !== undefined ? `?withRequesters=${withRequesters}` : '';
-    const users = await api.get<UserMiniDTO[]>(`users/mini${query}`);
-    dispatch(
-      withRequesters
-        ? slice.actions.getAllUsersMini({ users })
-        : slice.actions.getUsersMini({ users })
-    );
-  };
+    async (dispatch) => {
+      const query =
+        withRequesters !== undefined ? `?withRequesters=${withRequesters}` : '';
+      const users = await api.get<UserMiniDTO[]>(`users/mini${query}`);
+      dispatch(
+        withRequesters
+          ? slice.actions.getAllUsersMini({ users })
+          : slice.actions.getUsersMini({ users })
+      );
+    };
 
 export const getDisabledUsersMini = (): AppThunk => async (dispatch) => {
   const users = await api.get<UserMiniDTO[]>('users/mini/disabled');
@@ -199,31 +209,47 @@ export const getDisabledUsersMini = (): AppThunk => async (dispatch) => {
 };
 export const addUser =
   (user): AppThunk =>
-  async (dispatch) => {
-    const userResponse = await api.post<UserResponseDTO>('users', user);
-    dispatch(slice.actions.addUser({ user: userResponse }));
-  };
+    async (dispatch) => {
+      const userResponse = await api.post<UserResponseDTO>('users', user);
+      dispatch(slice.actions.addUser({ user: userResponse }));
+    };
 export const deleteUser =
   (id: number): AppThunk =>
-  async (dispatch) => {
-    const userResponse = await api.deletes<{ success: boolean }>(`users/${id}`);
-    const { success } = userResponse;
-    if (success) {
+    async (dispatch) => {
+      const userResponse = await api.patch<{ success: boolean }>(
+        `users/soft-delete/${id}`,
+        {}
+      );
       dispatch(slice.actions.deleteUser({ id }));
-    }
-  };
+    };
 
 export const inviteUsers =
   (roleId: number, emails: string[]): AppThunk =>
-  async (dispatch) => {
-    const successResponse = await api.post<{ success: boolean }>(
-      'users/invite',
-      {
-        role: { id: roleId },
-        emails
-      }
-    );
-  };
+    async (dispatch) => {
+      const successResponse = await api.post<{ success: boolean }>(
+        'users/invite',
+        {
+          role: { id: roleId },
+          emails
+        }
+      );
+    };
+
+
+/**
+ * Action to create a new user member directly.
+ * Designed for admin use to bypass invitation logic and avoid "Index: 0" errors.
+ * Calls the secure /users/create endpoint.
+ */
+export const createUserMember =
+  (user: any): AppThunk =>
+    async (dispatch) => {
+      const userResponse = await api.post<UserResponseDTO>(
+        `${basePath}/create`,
+        user
+      );
+      dispatch(slice.actions.addUser({ user: userResponse }));
+    };
 
 export const clearSingleUser = (): AppThunk => async (dispatch) => {
   dispatch(slice.actions.clearSingleUser({}));

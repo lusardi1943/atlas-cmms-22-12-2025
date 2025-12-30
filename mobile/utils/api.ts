@@ -3,13 +3,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 async function api<T>(url: string, options): Promise<T> {
   return fetch(url, { headers: await authHeader(false), ...options }).then(
-    (response) => {
+    async (response) => {
       if (!response.ok) {
         if (response.status === 403) {
           //TODO
           // AsyncStorage.clear();
         }
-        throw new Error(response.statusText);
+        try {
+          const errorData = await response.json();
+          throw new Error(errorData.message || response.statusText);
+        } catch (e) {
+          throw new Error(response.statusText);
+        }
       }
       return response.json() as Promise<T>;
     }
@@ -36,8 +41,8 @@ async function post<T>(
     body: isNotJson
       ? data
       : JSON.stringify(
-          withoutCompany ? data : { ...data, company: { id: companyId } }
-        )
+        withoutCompany ? data : { ...data, company: { id: companyId } }
+      )
   });
 }
 

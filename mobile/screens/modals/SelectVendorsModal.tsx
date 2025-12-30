@@ -13,12 +13,13 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from '../../store';
 import { VendorMiniDTO } from '../../models/vendor';
 import { getVendorsMini } from '../../slices/vendor';
-import { Checkbox, Divider, Text, useTheme } from 'react-native-paper';
+import { Checkbox, Divider, Searchbar, Text, useTheme } from 'react-native-paper';
+import { includesNormalized } from '../../utils/strings';
 
 export default function SelectVendorsModal({
-                                             navigation,
-                                             route
-                                           }: RootStackScreenProps<'SelectVendors'>) {
+  navigation,
+  route
+}: RootStackScreenProps<'SelectVendors'>) {
   const { onChange, selected, multiple } = route.params;
   const theme = useTheme();
   const { t }: { t: any } = useTranslation();
@@ -26,6 +27,7 @@ export default function SelectVendorsModal({
   const { vendorsMini, loadingGet } = useSelector((state) => state.vendors);
   const [selectedVendors, setSelectedVendors] = useState<VendorMiniDTO[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     if (vendorsMini.length) {
@@ -83,7 +85,13 @@ export default function SelectVendorsModal({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Searchbar
+        placeholder={t('search')}
+        onChangeText={setSearchQuery}
+        value={searchQuery}
+        style={{ backgroundColor: theme.colors.background }}
+      />
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -96,36 +104,41 @@ export default function SelectVendorsModal({
           backgroundColor: theme.colors.background
         }}
       >
-        {vendorsMini.map((vendor) => (
-          <TouchableOpacity
-            onPress={() => {
-              toggle(vendor.id);
-            }}
-            key={vendor.id}
-            style={{
-              borderRadius: 5,
-              padding: 15,
-              backgroundColor: 'white',
-              display: 'flex',
-              flexDirection: 'row',
-              elevation: 2,
-              alignItems: 'center'
-            }}
-          >
-            {multiple && (
-              <Checkbox
-                status={
-                  selectedIds.includes(vendor.id) ? 'checked' : 'unchecked'
-                }
-                onPress={() => {
-                  toggle(vendor.id);
-                }}
-              />
-            )}
-            <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>{vendor.companyName}</Text>
-            <Divider />
-          </TouchableOpacity>
-        ))}
+        {vendorsMini
+          .filter((vendor) => includesNormalized(vendor.companyName, searchQuery))
+          .sort((a, b) => a.companyName.localeCompare(b.companyName))
+          .map((vendor) => (
+            <TouchableOpacity
+              onPress={() => {
+                toggle(vendor.id);
+              }}
+              key={vendor.id}
+              style={{
+                borderRadius: 5,
+                padding: 15,
+                backgroundColor: 'white',
+                display: 'flex',
+                flexDirection: 'row',
+                elevation: 2,
+                alignItems: 'center'
+              }}
+            >
+              {multiple && (
+                <Checkbox
+                  status={
+                    selectedIds.includes(vendor.id) ? 'checked' : 'unchecked'
+                  }
+                  onPress={() => {
+                    toggle(vendor.id);
+                  }}
+                />
+              )}
+              <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>
+                {vendor.companyName}
+              </Text>
+              <Divider />
+            </TouchableOpacity>
+          ))}
       </ScrollView>
     </View>
   );

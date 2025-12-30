@@ -33,49 +33,49 @@ function Filters({ filterFields, onFilterChange, onSave }: OwnProps) {
     operator?: SearchOperator;
     type: FilterFieldType;
   }[] = [
-    { accessor: 'categories', fieldName: 'category', type: 'array' },
-    { accessor: 'locations', fieldName: 'location', type: 'array' },
-    {
-      accessor: 'area',
-      fieldName: 'area',
-      type: 'simple'
-    },
-    {
-      accessor: 'model',
-      fieldName: 'model',
-      type: 'simple'
-    },
-    { accessor: 'createdBy', fieldName: 'createdBy', type: 'array' },
+      { accessor: 'categories', fieldName: 'category', type: 'array' },
+      { accessor: 'locations', fieldName: 'location', type: 'array' },
+      {
+        accessor: 'area',
+        fieldName: 'area',
+        type: 'simple'
+      },
+      {
+        accessor: 'model',
+        fieldName: 'model',
+        type: 'simple'
+      },
+      { accessor: 'createdBy', fieldName: 'createdBy', type: 'array' },
 
-    { accessor: 'teams', fieldName: 'team', type: 'array' },
-    { accessor: 'primaryUsers', fieldName: 'primaryUser', type: 'array' },
-    {
-      accessor: 'assignedTo',
-      fieldName: 'assignedTo',
-      operator: 'inm',
-      type: 'array'
-    },
-    {
-      accessor: 'customers',
-      fieldName: 'customer',
-      operator: 'inm',
-      type: 'array'
-    },
-    {
-      accessor: 'vendors',
-      fieldName: 'vendor',
-      operator: 'inm',
-      type: 'array'
-    },
+      { accessor: 'teams', fieldName: 'team', type: 'array' },
+      { accessor: 'primaryUsers', fieldName: 'primaryUser', type: 'array' },
+      {
+        accessor: 'assignedTo',
+        fieldName: 'assignedTo',
+        operator: 'inm',
+        type: 'array'
+      },
+      {
+        accessor: 'customers',
+        fieldName: 'customer',
+        operator: 'inm',
+        type: 'array'
+      },
+      {
+        accessor: 'vendors',
+        fieldName: 'vendor',
+        operator: 'inm',
+        type: 'array'
+      },
 
-    {
-      accessor: 'archived',
-      fieldName: 'archived',
-      type: 'simple'
-    },
-    { accessor: 'createdAt', fieldName: 'createdAt', type: 'date' },
-    { accessor: 'updatedAt', fieldName: 'updatedAt', type: 'date' }
-  ];
+      {
+        accessor: 'archived',
+        fieldName: 'archived',
+        type: 'simple'
+      },
+      { accessor: 'createdAt', fieldName: 'createdAt', type: 'date' },
+      { accessor: 'updatedAt', fieldName: 'updatedAt', type: 'date' }
+    ];
   const fields: Array<IField> = [
     {
       name: 'categories',
@@ -89,7 +89,8 @@ function Filters({ filterFields, onFilterChange, onSave }: OwnProps) {
       type: 'select',
       label: t('location'),
       type2: 'location',
-      multiple: true
+      multiple: true,
+      leafOnly: true
     },
     {
       name: 'area',
@@ -173,10 +174,10 @@ function Filters({ filterFields, onFilterChange, onSave }: OwnProps) {
 
   const getValuesFromFilterFields = (): {
     [key: string]:
-      | { label: string; value: string }
-      | { label: string; value: number }[]
-      | boolean
-      | [string, string];
+    | { label: string; value: string }
+    | { label: string; value: number }[]
+    | boolean
+    | [string, string];
   } => {
     return {
       categories: getLabelAndValue(
@@ -252,7 +253,7 @@ function Filters({ filterFields, onFilterChange, onSave }: OwnProps) {
           validation={Yup.object().shape(shape)}
           submitText={t('save')}
           values={getValuesFromFilterFields()}
-          onChange={({ field, e }) => {}}
+          onChange={({ field, e }) => { }}
           onSubmit={async (values) => {
             let newFilters = [...filterFields];
             filtersConfig.forEach((filterConfig) => {

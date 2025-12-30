@@ -30,11 +30,12 @@ import { MeterMiniDTO } from '../../models/meter';
 import { getTeamsMini } from '../../slices/team';
 import { getChecklists } from '../../slices/checklist';
 import { useDispatch, useSelector } from '../../store';
+import { includesNormalized } from '../../utils/strings';
 
 export default function SelectChecklistsModal({
-                                                navigation,
-                                                route
-                                              }: RootStackScreenProps<'SelectChecklists'>) {
+  navigation,
+  route
+}: RootStackScreenProps<'SelectChecklists'>) {
   const { onChange, selected } = route.params;
   const theme = useTheme();
   const { loadingGet, checklists } = useSelector(state => state.checklists);
@@ -64,30 +65,33 @@ export default function SelectChecklistsModal({
             onRefresh={() => dispatch(getChecklists())}
           />}
       >
-        {checklists.filter(mini => mini.name.toLowerCase().includes(searchQuery.toLowerCase().trim())).map((checklist) => (
-          <TouchableOpacity
-            onPress={() => {
-              onChange([
-                ...selected,
-                ...checklist.taskBases.map(taskBase => getTaskFromTaskBase(taskBase))
-              ]);
-              navigation.pop(2);
-            }}
-            key={checklist.id}
-            style={{
-              borderRadius: 5,
-              padding: 15,
-              backgroundColor: 'white',
-              display: 'flex',
-              flexDirection: 'row',
-              elevation: 2,
-              alignItems: 'center'
-            }}
-          >
-            <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>{checklist.name}</Text>
-            <Divider />
-          </TouchableOpacity>
-        ))}
+        {checklists
+          .filter((mini) => includesNormalized(mini.name, searchQuery))
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((checklist) => (
+            <TouchableOpacity
+              onPress={() => {
+                onChange([
+                  ...selected,
+                  ...checklist.taskBases.map(taskBase => getTaskFromTaskBase(taskBase))
+                ]);
+                navigation.pop(2);
+              }}
+              key={checklist.id}
+              style={{
+                borderRadius: 5,
+                padding: 15,
+                backgroundColor: 'white',
+                display: 'flex',
+                flexDirection: 'row',
+                elevation: 2,
+                alignItems: 'center'
+              }}
+            >
+              <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>{checklist.name}</Text>
+              <Divider />
+            </TouchableOpacity>
+          ))}
       </ScrollView>
     </View>
   );

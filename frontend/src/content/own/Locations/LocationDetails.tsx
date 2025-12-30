@@ -19,7 +19,7 @@ import {
   useTheme
 } from '@mui/material';
 import Location from '../../../models/owns/location';
-import { ChangeEvent, useContext, useEffect, useState } from 'react';
+import { ChangeEvent, useContext, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import EditTwoToneIcon from '@mui/icons-material/EditTwoTone';
 import DeleteTwoToneIcon from '@mui/icons-material/DeleteTwoTone';
@@ -41,6 +41,11 @@ import { getAssetUrl } from '../../../utils/urlPaths';
 import useAuth from '../../../hooks/useAuth';
 import { PermissionEntity } from '../../../models/owns/role';
 import { PlanFeature } from '../../../models/owns/subscriptionPlan';
+import { AssetRow } from '../../../models/owns/asset';
+import { AssetDTO } from '../../../models/owns/asset';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { Collapse } from '@mui/material';
 
 interface LocationDetailsProps {
   location: Location;
@@ -103,11 +108,174 @@ export default function LocationDetails(props: LocationDetailsProps) {
     name: Yup.string().required(t('required_floor_plan_name'))
   };
 
+  /**
+   * Construye la jerarquía de activos sumando el campo 'hierarchy' (array de IDs)
+   * basado en la relación parentAsset.
+   */
+  const buildHierarchy = (assets: AssetDTO[]): AssetRow[] => {
+    const assetMap = new Map<number, AssetDTO>();
+    assets.forEach((asset) => assetMap.set(asset.id, asset));
+
+    const getHierarchy = (asset: AssetDTO): number[] => {
+      const path: number[] = [asset.id];
+      let current = asset;
+      while (current.parentAsset) {
+        const parent = assetMap.get(current.parentAsset.id);
+        if (parent) {
+          path.unshift(parent.id);
+          current = parent;
+        } else {
+          // Si el padre no está en la lista de esta localización, paramos
+          break;
+        }
+      }
+      return path;
+    };
+
+    return assets.map((asset) => ({
+      ...asset,
+      hierarchy: getHierarchy(asset)
+    }));
+  };
+
+  // Interfaz proyectada para los nodos del árbol de activos
+  interface AssetTreeNode extends AssetRow {
+    children: AssetTreeNode[];
+  }
+
+  /**
+   * Componente recursivo para renderizar la jerarquía de activos en estilo lista.
+   * Proporciona un control total sobre el diseño (nombres en azul, fechas debajo, indentación).
+   */
+  const RecursiveAssetItem = ({
+    node,
+    depth = 0,
+    navigate,
+    getAssetUrl,
+    getFormattedDate
+  }: {
+    node: AssetTreeNode;
+    depth?: number;
+    navigate: any;
+    getAssetUrl: any;
+    getFormattedDate: any;
+    key?: any;
+  }) => {
+    const [open, setOpen] = useState(false);
+    const hasChildren = node.children && node.children.length > 0;
+
+    return (
+      <Box key={node.id}>
+        <ListItem
+          disablePadding
+          sx={{
+            py: 0.5,
+            pl: depth * 4, // Indentación visual de la jerarquía
+            display: 'flex',
+            alignItems: 'flex-start'
+          }}
+        >
+          {/* Icono de expansión para navegación jerárquica */}
+          <Box sx={{ width: 32, mt: 0.5 }}>
+            {hasChildren && (
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpen(!open);
+                }}
+                sx={{ p: 0.5 }}
+              >
+                {open ? (
+                  <ExpandMoreIcon fontSize="small" />
+                ) : (
+                  <ChevronRightIcon fontSize="small" />
+                )}
+              </IconButton>
+            )}
+          </Box>
+          <Box
+            sx={{ cursor: 'pointer', flex: 1 }}
+            onClick={() => navigate(getAssetUrl(node.id))}
+          >
+            {/* Nombre del activo con estilo prominente (Imagen 2) */}
+            <Typography
+              sx={{
+                fontWeight: '600',
+                fontSize: '0.9rem',
+                color: theme.colors.primary.main,
+                lineHeight: 1.1,
+                '&:hover': { textDecoration: 'underline' }
+              }}
+            >
+              {node.name}
+            </Typography>
+            {/* Fecha de creación en estilo secundario */}
+            <Typography
+              variant="subtitle2"
+              color="textSecondary"
+              sx={{ fontSize: '0.7rem', fontWeight: '400' }}
+            >
+              {getFormattedDate(node.createdAt)}
+            </Typography>
+          </Box>
+        </ListItem>
+        {/* Renderizado recursivo de hijos si el nivel está expandido */}
+        {hasChildren && (
+          <Collapse in={open} timeout="auto" unmountOnExit>
+            <List disablePadding>
+              {node.children.map((child) => (
+                <RecursiveAssetItem
+                  key={child.id}
+                  node={child}
+                  depth={depth + 1}
+                  navigate={navigate}
+                  getAssetUrl={getAssetUrl}
+                  getFormattedDate={getFormattedDate}
+                />
+              ))}
+            </List>
+          </Collapse>
+        )}
+      </Box>
+    );
+  };
+
   useEffect(() => {
     dispatch(getAssetsByLocation(location.id));
     dispatch(getWorkOrdersByLocation(location.id));
     dispatch(getFloorPlans(location.id));
-  }, [location]);
+  }, [location, dispatch]);
+
+  const assetRows = useMemo(() => buildHierarchy(locationAssets), [locationAssets]);
+
+  /**
+   * Transforma una lista plana de activos con información de jerarquía
+   * en un árbol de nodos hijos para su renderizado jerárquico.
+   */
+  const mapAssetsToTree = (assets: AssetRow[]): AssetTreeNode[] => {
+    const assetMap = new Map<number, AssetTreeNode>();
+    const roots: AssetTreeNode[] = [];
+
+    // Mapeamos todos los activos por ID
+    assets.forEach((asset) => {
+      assetMap.set(asset.id, { ...asset, children: [] });
+    });
+
+    // Reconstruimos la estructura padre-hijo
+    assets.forEach((asset) => {
+      const node = assetMap.get(asset.id);
+      if (asset.parentAsset && assetMap.has(asset.parentAsset.id)) {
+        assetMap.get(asset.parentAsset.id).children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+
+    return roots;
+  };
+
+  const assetTree = useMemo(() => mapAssetsToTree(assetRows), [assetRows]);
 
   const renderAddFloorPlanModal = () => (
     <Dialog
@@ -140,7 +308,7 @@ export default function LocationDetails(props: LocationDetailsProps) {
             validation={Yup.object().shape(floorPlanShape)}
             submitText={t('add_floor_plan')}
             values={{}}
-            onChange={({ field, e }) => {}}
+            onChange={({ field, e }) => { }}
             onSubmit={async (values) => {
               return new Promise<void>((resolve, rej) => {
                 uploadFiles([], values.image)
@@ -245,18 +413,15 @@ export default function LocationDetails(props: LocationDetailsProps) {
               </Box>
             )}
             {locationAssets.length ? (
-              <List sx={{ width: '100%' }}>
-                {locationAssets.map((asset) => (
-                  <ListItemButton
-                    key={asset.id}
-                    divider
-                    onClick={() => navigate(getAssetUrl(asset.id))}
-                  >
-                    <ListItemText
-                      primary={asset.name}
-                      secondary={getFormattedDate(asset.createdAt)}
-                    />
-                  </ListItemButton>
+              <List sx={{ width: '100%', mt: 2 }}>
+                {assetTree.map((rootNode) => (
+                  <RecursiveAssetItem
+                    key={rootNode.id}
+                    node={rootNode}
+                    navigate={navigate}
+                    getAssetUrl={getAssetUrl}
+                    getFormattedDate={getFormattedDate}
+                  />
                 ))}
               </List>
             ) : (

@@ -800,9 +800,23 @@ const esJSON = {
   LIMITED_TECHNICIAN_name: 'Técnico limitado',
   LIMITED_TECHNICIAN_description:
     'Los técnicos limitados solo pueden ver las órdenes de trabajo que se les han asignado',
-  VIEW_ONLY_name: 'Solo visualización',
+  role_VIEW_ONLY_name: 'Solo lectura',
+  role_VIEW_ONLY_description:
+    'Los usuarios de solo lectura pueden ver todo, pero no pueden crear, editar ni eliminar nada.',
+  VIEW_ONLY_name: 'Solo lectura',
   VIEW_ONLY_description:
-    'Los usuarios de solo visualización tienen acceso de visualización completa, pero no pueden editar nada',
+    'Los usuarios de solo lectura pueden ver todo, pero no pueden crear, editar ni eliminar nada.',
+  confirm_disable_user: '¿Está seguro de que desea deshabilitar a {{user}}?',
+  user_disabled_success: 'Usuario deshabilitado con éxito',
+  user_enabled_success: 'Usuario habilitado con éxito',
+  enable: 'Habilitar',
+  disable: 'Deshabilitar',
+  delete: 'Eliminar',
+  confirm_delete_user: '¿Está seguro de que desea eliminar a {{user}}?',
+  user_deleted_success: 'El usuario ha sido eliminado exitosamente',
+  view_disabled_users: 'Ver usuarios deshabilitados',
+  edit_email: 'Editar correo electrónico',
+  deactivated_until: 'Desactivado hasta',
   REQUESTER_name: 'Solicitante',
   REQUESTER_description:
     'Los solicitantes solo pueden enviar solicitudes de trabajo y ver su estado.',
@@ -1376,10 +1390,6 @@ const esJSON = {
   switch_to_super_user: 'Cambiar a superadministrador',
   switch_account_description: 'Seleccione una cuenta para continuar',
   put_location_in_map: 'Poner ubicación en el mapa',
-  confirm_disable_user:
-    '¿Estás seguro de que deseas desactivar {{user}}? Solo podrás habilitarlo después de un mes',
-  user_disabled_success: 'Usuario deshabilitado exitosamente',
-  disable: 'Desactivado',
   manufacturer: 'Fabricante',
   power: 'Potencia',
   import_error: 'La importación no se realizó',
@@ -1494,7 +1504,18 @@ const esJSON = {
   'schedule.monthly_one': 'Cada {{count}} mes',
   'schedule.monthly_other': 'Cada {{count}} meses',
   'schedule.yearly_one': 'Cada {{count}} año',
-  'schedule.yearly_other': 'Cada {{count}} años'
+  'schedule.yearly_other': 'Cada {{count}} años',
+  deactivate_user: 'Desactivar usuario',
+  indefinite: 'Indefinido',
+  until_a_date: 'Hasta una fecha',
+  reactivation_date: 'Fecha de reactivación',
+  user_invite_email_already_selected: 'Este correo electrónico ya ha sido seleccionado',
+  user_invite_email_already_in_company: 'Un usuario con este correo electrónico ya está en esta empresa',
+  user_invite_email_invalid: 'Este correo electrónico no es válido',
+  user_invite_email_max_reached: 'Puedes invitar a un máximo de 20 usuarios a la vez',
+  choose_country: 'Elige un país',
+  error_occurred: 'Ha ocurrido un error',
+  unknown_error_occurred: 'Ha ocurrido un error desconocido'
 };
 
 export default esJSON;

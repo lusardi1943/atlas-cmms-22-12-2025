@@ -13,42 +13,42 @@ export interface TableCustomizedColumnType {
 export interface IField {
   label: string;
   type:
-    | 'number'
-    | 'text'
-    | 'checkbox'
-    | 'file'
-    | 'groupCheckbox'
-    | 'select'
-    | 'titleGroupField'
-    | 'form'
-    | 'date'
-    | 'switch'
-    | 'partQuantity'
-    | 'coordinates'
-    | 'dateRange'
-    | 'signature';
+  | 'number'
+  | 'text'
+  | 'checkbox'
+  | 'file'
+  | 'groupCheckbox'
+  | 'select'
+  | 'titleGroupField'
+  | 'form'
+  | 'date'
+  | 'switch'
+  | 'partQuantity'
+  | 'coordinates'
+  | 'dateRange'
+  | 'signature';
   type2?:
-    | 'customer'
-    | 'vendor'
-    | 'user'
-    | 'team'
-    | 'part'
-    | 'location'
-    | 'asset'
-    | 'priority'
-    | 'task'
-    | 'category'
-    | 'parentLocation'
-    | 'role'
-    | 'currency';
+  | 'customer'
+  | 'vendor'
+  | 'user'
+  | 'team'
+  | 'part'
+  | 'location'
+  | 'asset'
+  | 'priority'
+  | 'task'
+  | 'category'
+  | 'parentLocation'
+  | 'role'
+  | 'currency';
   category?:
-    | 'purchase-order-categories'
-    | 'cost-categories'
-    | 'time-categories'
-    | 'work-order-categories'
-    | 'meter-categories'
-    | 'part-categories'
-    | 'asset-categories';
+  | 'purchase-order-categories'
+  | 'cost-categories'
+  | 'time-categories'
+  | 'work-order-categories'
+  | 'meter-categories'
+  | 'part-categories'
+  | 'asset-categories';
   name?: string;
   placeholder?: string;
   fileType?: 'file' | 'image';
@@ -67,6 +67,7 @@ export interface IField {
   loading?: boolean;
   excluded?: number;
   relatedFields?: { field: string; value?: any; hide?: boolean }[];
+  leafOnly?: boolean;
 }
 
 export interface IHash<E> {

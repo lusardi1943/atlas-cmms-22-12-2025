@@ -82,6 +82,7 @@ import {
 import Filters from './Filters';
 import {
   fireGa4Event,
+  getNewCriteriaOnSearch,
   getRandomColor,
   onSearchQueryChange
 } from '../../../utils/overall';
@@ -135,26 +136,45 @@ function Assets() {
         value: false
       }
     ],
+    // Configuración de búsqueda inicial: Se establece ordenación A-Z por ubicación por defecto mediante 'sortField: location.name'.
+    // Impacto: Mejora la organización visual al agrupar los activos por su sitio físico.
     pageSize: 10,
     pageNum: 0,
-    direction: 'DESC'
+    sortField: 'location.name',
+    direction: 'ASC'
   };
   const [criteria, setCriteria] = useState<SearchCriteria>(initialCriteria);
   const onQueryChange = (event) => {
-    setView(event.target.value ? 'list' : 'hierarchy');
-    onSearchQueryChange<AssetDTO>(event, criteria, setCriteria, [
-      'name',
-      'description',
-      'model',
-      'additionalInfos',
-      'barCode',
-      'area'
-    ]);
+    const query = event.target.value;
+    setView(query ? 'list' : 'hierarchy');
+    // Se usa actualización funcional para evitar problemas de stale closure con el debounce.
+    setCriteria((prevCriteria) => {
+      const currentCriteriaWithNewPageSize = {
+        ...prevCriteria,
+        pageSize: query ? 1000 : 10
+      };
+      return getNewCriteriaOnSearch(
+        query,
+        currentCriteriaWithNewPageSize,
+        [
+          'name',
+          'description',
+          'model',
+          'additionalInfos',
+          'barCode',
+          'area',
+          'location.name'
+        ]
+      );
+    });
   };
   const debouncedQueryChange = useMemo(() => debounce(onQueryChange, 1300), []);
   const onFilterChange = (newFilters: FilterField[]) => {
     const newCriteria = { ...criteria };
     newCriteria.filterFields = newFilters;
+    // Optimización de resultados: Si hay filtros aplicados, aumentamos el pageSize a 1000 para cargar todos los resultados relevantes.
+    // Esto soluciona el problema de visualización limitada a 10 elementos al usar el Drawer de filtros.
+    newCriteria.pageSize = newFilters.length > 0 ? 1000 : 10;
     setCriteria(newCriteria);
   };
   const [deployedAssets, setDeployedAssets] = useState<
@@ -693,12 +713,12 @@ function Assets() {
               warrantyExpirationDate: null,
               location: locationParamObject
                 ? {
-                    label: locationParamObject.name,
-                    value: locationParamObject.id
-                  }
+                  label: locationParamObject.name,
+                  value: locationParamObject.id
+                }
                 : null
             }}
-            onChange={({ field, e }) => {}}
+            onChange={({ field, e }) => { }}
             onSubmit={async (values) => {
               if (assetsHierarchy.length === 0)
                 fireGa4Event('first_asset_creation');
@@ -755,12 +775,12 @@ function Assets() {
         style={
           (rowNode?.depth ?? 0) > 0
             ? {
-                backgroundColor:
-                  rowNode.depth % 2 === 0
-                    ? theme.colors.primary.light
-                    : theme.colors.primary.main,
-                color: 'white'
-              }
+              backgroundColor:
+                rowNode.depth % 2 === 0
+                  ? theme.colors.primary.light
+                  : theme.colors.primary.main,
+              color: 'white'
+            }
             : undefined
         }
       />

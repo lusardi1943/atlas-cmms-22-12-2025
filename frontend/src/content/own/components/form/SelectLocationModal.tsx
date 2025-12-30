@@ -39,6 +39,7 @@ interface SelectLocationModalProps {
   excludedLocationIds?: number[]; // Changed to array for multiple exclusions
   maxSelections?: number; // Optional limit for selections
   initialSelectedLocations?: LocationMiniDTO[]; // Optional pre-selected locations
+  leafOnly?: boolean;
 }
 
 const getLocationRows = (locations: LocationMiniDTO[]): IRow[] => {
@@ -94,7 +95,8 @@ const SelectLocationModal: React.FC<SelectLocationModalProps> = ({
   onSelect,
   excludedLocationIds = [],
   maxSelections,
-  initialSelectedLocations = []
+  initialSelectedLocations = [],
+  leafOnly = false
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -131,7 +133,7 @@ const SelectLocationModal: React.FC<SelectLocationModalProps> = ({
       open &&
       (!initialized.current ||
         JSON.stringify(previousInitialSelectedLocations) !==
-          JSON.stringify(initialSelectedLocations))
+        JSON.stringify(initialSelectedLocations))
     ) {
       initialized.current = true;
       handleReset(true);
@@ -183,12 +185,12 @@ const SelectLocationModal: React.FC<SelectLocationModalProps> = ({
         style={
           (rowNode?.depth ?? 0) > 0
             ? {
-                backgroundColor:
-                  rowNode.depth % 2 === 0
-                    ? theme.colors.primary.light
-                    : theme.colors.primary.main,
-                color: 'white'
-              }
+              backgroundColor:
+                rowNode.depth % 2 === 0
+                  ? theme.colors.primary.light
+                  : theme.colors.primary.main,
+              color: 'white'
+            }
             : undefined
         }
       />
@@ -248,7 +250,9 @@ const SelectLocationModal: React.FC<SelectLocationModalProps> = ({
   };
 
   const filteredLocationsHierarchy = locationsHierarchy.filter(
-    (location) => !excludedLocationIds.includes(location.id)
+    (location) =>
+      !excludedLocationIds.includes(location.id) &&
+      (!leafOnly || !location.hasChildren)
   );
 
   return (
@@ -289,7 +293,7 @@ const SelectLocationModal: React.FC<SelectLocationModalProps> = ({
         <Box sx={{ height: '100%', width: '100%' }}>
           <CustomDataGrid
             pro
-            treeData
+            treeData={!leafOnly}
             apiRef={apiRef}
             columns={columns}
             rows={filteredLocationsHierarchy}

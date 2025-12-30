@@ -34,34 +34,34 @@ export default function WorkOrderFilters({
     operator?: SearchOperator;
     type: FilterFieldType;
   }[] = [
-    { accessor: 'assets', fieldName: 'asset', type: 'array' },
-    { accessor: 'categories', fieldName: 'category', type: 'array' },
-    { accessor: 'teams', fieldName: 'team', type: 'array' },
-    { accessor: 'primaryUsers', fieldName: 'primaryUser', type: 'array' },
-    { accessor: 'locations', fieldName: 'location', type: 'array' },
-    { accessor: 'createdBy', fieldName: 'createdBy', type: 'array' },
-    { accessor: 'completedBy', fieldName: 'completedBy', type: 'array' },
-    {
-      accessor: 'customers',
-      fieldName: 'customer',
-      operator: 'inm',
-      type: 'array'
-    },
-    {
-      accessor: 'assignedTo',
-      fieldName: 'assignedTo',
-      operator: 'inm',
-      type: 'array'
-    },
-    {
-      accessor: 'archived',
-      fieldName: 'archived',
-      type: 'simple'
-    },
-    { accessor: 'createdAt', fieldName: 'createdAt', type: 'date' },
-    { accessor: 'updatedAt', fieldName: 'updatedAt', type: 'date' },
-    { accessor: 'completedOn', fieldName: 'completedOn', type: 'date' }
-  ];
+      { accessor: 'assets', fieldName: 'asset', type: 'array' },
+      { accessor: 'categories', fieldName: 'category', type: 'array' },
+      { accessor: 'teams', fieldName: 'team', type: 'array' },
+      { accessor: 'primaryUsers', fieldName: 'primaryUser', type: 'array' },
+      { accessor: 'locations', fieldName: 'location', type: 'array' },
+      { accessor: 'createdBy', fieldName: 'createdBy', type: 'array' },
+      { accessor: 'completedBy', fieldName: 'completedBy', type: 'array' },
+      {
+        accessor: 'customers',
+        fieldName: 'customer',
+        operator: 'inm',
+        type: 'array'
+      },
+      {
+        accessor: 'assignedTo',
+        fieldName: 'assignedTo',
+        operator: 'inm',
+        type: 'array'
+      },
+      {
+        accessor: 'archived',
+        fieldName: 'archived',
+        type: 'simple'
+      },
+      { accessor: 'createdAt', fieldName: 'createdAt', type: 'date' },
+      { accessor: 'updatedAt', fieldName: 'updatedAt', type: 'date' },
+      { accessor: 'completedOn', fieldName: 'completedOn', type: 'date' }
+    ];
   const fields: Array<IField> = [
     {
       name: 'type',
@@ -100,7 +100,8 @@ export default function WorkOrderFilters({
       type: 'select',
       label: t('location'),
       type2: 'location',
-      multiple: true
+      multiple: true,
+      leafOnly: true
     },
     { name: 'peopleGroup', type: 'titleGroupField', label: t('people') },
     {
@@ -183,11 +184,11 @@ export default function WorkOrderFilters({
   };
   const getValuesFromFilterFields = (): {
     [key: string]:
-      | { label: string; value: string }
-      | { label: string; value: number }[]
-      | boolean
-      | string
-      | [string, string];
+    | { label: string; value: string }
+    | { label: string; value: number }[]
+    | boolean
+    | string
+    | [string, string];
   } => {
     const typeValue = filterFields.find(
       (filterField) => filterField.field === 'parentPreventiveMaintenance'
@@ -259,7 +260,7 @@ export default function WorkOrderFilters({
         validation={Yup.object().shape(shape)}
         submitText={t('save')}
         values={getValuesFromFilterFields()}
-        onChange={({ field, e }) => {}}
+        onChange={({ field, e }) => { }}
         onSubmit={async (values) => {
           let newFilters = [...filterFields];
           filtersConfig.forEach((filterConfig) => {

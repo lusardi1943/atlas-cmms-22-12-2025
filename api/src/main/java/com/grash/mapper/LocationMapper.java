@@ -22,12 +22,20 @@ public interface LocationMapper {
     LocationShowDTO toShowDto(Location model, @Context LocationService locationService);
 
     @Mapping(source = "parentLocation.id", target = "parentId")
+    LocationMiniDTO toMiniDto(Location model, @Context LocationService locationService);
+
+    @Mapping(source = "parentLocation.id", target = "parentId")
     LocationMiniDTO toMiniDto(Location model);
 
     @AfterMapping
-    default LocationShowDTO toShowDto(Location model, @MappingTarget LocationShowDTO target,
+    default void toShowDto(Location model, @MappingTarget LocationShowDTO target,
                                       @Context LocationService locationService) {
         target.setHasChildren(locationService.hasChildren(model.getId()));
-        return target;
+    }
+
+    @AfterMapping
+    default void toMiniDto(Location model, @MappingTarget LocationMiniDTO target,
+                                      @Context LocationService locationService) {
+        target.setHasChildren(locationService.hasChildren(model.getId()));
     }
 }

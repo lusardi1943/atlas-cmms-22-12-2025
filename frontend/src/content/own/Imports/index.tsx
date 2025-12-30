@@ -47,10 +47,11 @@ import api from '../../../utils/api';
 import i18n from 'i18next';
 import downloadFile from 'downloadjs';
 
-interface OwnProps {}
+interface OwnProps { }
 
 export interface OwnHeader {
   label: string;
+  englishLabel?: string;
   keyName: ImportKeys;
   required?: boolean;
   formatter?: (value: any) => any;
@@ -64,7 +65,7 @@ export type EntityType =
   | 'meters'
   | 'preventive-maintenances';
 
-const Import = ({}: OwnProps) => {
+const Import = ({ }: OwnProps) => {
   const { hasViewPermission, hasFeature } = useAuth();
   const { t }: { t: any } = useTranslation();
   const entityFromUrl = window.location.href.substring(
@@ -114,22 +115,58 @@ const Import = ({}: OwnProps) => {
   useEffect(() => {
     if (userHeaders.length) {
       let result: { userHeader: string; keyName: string }[] = [];
+      /**
+       * Lógica de emparejamiento automático de cabeceras.
+       * Se comparan las cabeceras del CSV del usuario con:
+       * 1. La etiqueta traducida (ej. "Dirección" en español).
+       * 2. La etiqueta en inglés (ej. "Address") como respaldo.
+       * Esto asegura que el mapeo funcione correctamente sin importar el idioma del sistema.
+       * El umbral de 'distance < 5' permite ligeras variaciones o errores tipográficos.
+       */
       headerKeysConfig[entity].forEach((ownHeader) => {
         const closestMatchInUserHeaders = closestMatch(
           ownHeader.label,
           userHeaders
         );
+        const closestMatchInUserHeadersEn = ownHeader.englishLabel
+          ? closestMatch(ownHeader.englishLabel, userHeaders)
+          : null;
+
         let closestUserHeader = closestMatchInUserHeaders;
         if (Array.isArray(closestMatchInUserHeaders))
           closestUserHeader = closestMatchInUserHeaders[0];
+
+        let closestUserHeaderEn = closestMatchInUserHeadersEn;
+        if (Array.isArray(closestMatchInUserHeadersEn))
+          closestUserHeaderEn = closestMatchInUserHeadersEn[0];
+
+        const distanceTranslated = closestUserHeader
+          ? distance(closestUserHeader as string, ownHeader.label)
+          : 1000;
+        const distanceEn =
+          closestUserHeaderEn && ownHeader.englishLabel
+            ? distance(closestUserHeaderEn as string, ownHeader.englishLabel)
+            : 1000;
+
         if (
           closestUserHeader &&
-          distance(closestUserHeader as string, ownHeader.label) < 5 &&
+          distanceTranslated < 5 &&
           result.every(({ userHeader }) => userHeader !== closestUserHeader)
         ) {
           result.push({
             userHeader: userHeaders.find(
               (userHeader) => userHeader === closestUserHeader
+            ),
+            keyName: ownHeader.keyName
+          });
+        } else if (
+          closestUserHeaderEn &&
+          distanceEn < 5 &&
+          result.every(({ userHeader }) => userHeader !== closestUserHeaderEn)
+        ) {
+          result.push({
+            userHeader: userHeaders.find(
+              (userHeader) => userHeader === closestUserHeaderEn
             ),
             keyName: ownHeader.keyName
           });
@@ -241,9 +278,9 @@ const Import = ({}: OwnProps) => {
       headerKeysConfig[entity].forEach(({ keyName, formatter }) => {
         let value =
           userElement[
-            matches.find(
-              (headerMatching) => headerMatching.ownHeader.keyName === keyName
-            )?.userHeader
+          matches.find(
+            (headerMatching) => headerMatching.ownHeader.keyName === keyName
+          )?.userHeader
           ];
         if (formatter) {
           value = formatter(value);
@@ -346,8 +383,8 @@ const Import = ({}: OwnProps) => {
                 <Typography>
                   {getMatchLabel(userHeader)
                     ? t(`matched_to_field`, {
-                        field: getMatchLabel(userHeader)
-                      })
+                      field: getMatchLabel(userHeader)
+                    })
                     : t('no_match_yet')}
                 </Typography>
                 <Stack direction="row" spacing={1}>

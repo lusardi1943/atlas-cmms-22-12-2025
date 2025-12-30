@@ -13,12 +13,13 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from '../../store';
 import { CustomerMiniDTO } from '../../models/customer';
 import { getCustomersMini } from '../../slices/customer';
-import { Checkbox, Divider, Text, useTheme } from 'react-native-paper';
+import { Checkbox, Divider, Searchbar, Text, useTheme } from 'react-native-paper';
+import { includesNormalized } from '../../utils/strings';
 
 export default function SelectCustomersModal({
-                                               navigation,
-                                               route
-                                             }: RootStackScreenProps<'SelectCustomers'>) {
+  navigation,
+  route
+}: RootStackScreenProps<'SelectCustomers'>) {
   const { onChange, selected, multiple } = route.params;
   const theme = useTheme();
   const { t }: { t: any } = useTranslation();
@@ -28,6 +29,7 @@ export default function SelectCustomersModal({
     []
   );
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     if (customersMini.length) {
@@ -85,7 +87,13 @@ export default function SelectCustomersModal({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Searchbar
+        placeholder={t('search')}
+        onChangeText={setSearchQuery}
+        value={searchQuery}
+        style={{ backgroundColor: theme.colors.background }}
+      />
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -98,36 +106,41 @@ export default function SelectCustomersModal({
           backgroundColor: theme.colors.background
         }}
       >
-        {customersMini.map((customer) => (
-          <TouchableOpacity
-            onPress={() => {
-              toggle(customer.id);
-            }}
-            key={customer.id}
-            style={{
-              borderRadius: 5,
-              padding: 15,
-              backgroundColor: 'white',
-              display: 'flex',
-              flexDirection: 'row',
-              elevation: 2,
-              alignItems: 'center'
-            }}
-          >
-            {multiple && (
-              <Checkbox
-                status={
-                  selectedIds.includes(customer.id) ? 'checked' : 'unchecked'
-                }
-                onPress={() => {
-                  toggle(customer.id);
-                }}
-              />
-            )}
-            <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>{customer.name}</Text>
-            <Divider />
-          </TouchableOpacity>
-        ))}
+        {customersMini
+          .filter((customer) => includesNormalized(customer.name, searchQuery))
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((customer) => (
+            <TouchableOpacity
+              onPress={() => {
+                toggle(customer.id);
+              }}
+              key={customer.id}
+              style={{
+                borderRadius: 5,
+                padding: 15,
+                backgroundColor: 'white',
+                display: 'flex',
+                flexDirection: 'row',
+                elevation: 2,
+                alignItems: 'center'
+              }}
+            >
+              {multiple && (
+                <Checkbox
+                  status={
+                    selectedIds.includes(customer.id) ? 'checked' : 'unchecked'
+                  }
+                  onPress={() => {
+                    toggle(customer.id);
+                  }}
+                />
+              )}
+              <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>
+                {customer.name}
+              </Text>
+              <Divider />
+            </TouchableOpacity>
+          ))}
       </ScrollView>
     </View>
   );

@@ -25,59 +25,73 @@ public class WrapperSpecification<T> implements Specification<T> {
 
         String strToSearch = filterField.getValue().toString().toLowerCase();
         Predicate result = null;
+        // Se utiliza la función 'unaccent' de PostgreSQL para permitir búsquedas insensibles a tildes y acentos.
+        // Impacto: Mejora la experiencia de búsqueda global (Activos, OTs, etc.) permitiendo encontrar resultados
+        // independientemente de si el usuario o los datos usan tildes.
+        Expression<String> unaccentValue = cb.function("unaccent", String.class, cb.literal("%" + strToSearch + "%"));
+        Expression<String> unaccentValueBegins = cb.function("unaccent", String.class, cb.literal(strToSearch + "%"));
+        Expression<String> unaccentValueEnds = cb.function("unaccent", String.class, cb.literal("%" + strToSearch));
+        Expression<String> unaccentValueEqual = cb.function("unaccent", String.class, cb.literal(strToSearch));
+
         switch (Objects.requireNonNull(SearchOperation.getSimpleOperation(filterField.getOperation()))) {
             case CONTAINS:
-                result = cb.like(cb.lower(root.get(filterField.getField())), "%" + strToSearch + "%");
+                // Se aplica 'unaccent' y 'lower' solo dentro de las operaciones de texto para evitar errores
+                // en campos que no son String (como company.id), lo que causaba resultados vacíos.
+                result = cb.like(cb.function("unaccent", String.class, cb.lower(getFieldPath(root, filterField.getField()).as(String.class))), unaccentValue);
                 break;
             case DOES_NOT_CONTAIN:
-                result = cb.notLike(cb.lower(root.get(filterField.getField())), "%" + strToSearch + "%");
+                result = cb.notLike(cb.function("unaccent", String.class, cb.lower(getFieldPath(root, filterField.getField()).as(String.class))), unaccentValue);
                 break;
             case BEGINS_WITH:
-                result = cb.like(cb.lower(root.get(filterField.getField())), strToSearch + "%");
+                result = cb.like(cb.function("unaccent", String.class, cb.lower(getFieldPath(root, filterField.getField()).as(String.class))), unaccentValueBegins);
                 break;
             case DOES_NOT_BEGIN_WITH:
-                result = cb.notLike(cb.lower(root.get(filterField.getField())), strToSearch + "%");
+                result = cb.notLike(cb.function("unaccent", String.class, cb.lower(getFieldPath(root, filterField.getField()).as(String.class))), unaccentValueBegins);
                 break;
             case ENDS_WITH:
-                result = cb.like(cb.lower(root.get(filterField.getField())), "%" + strToSearch);
+                result = cb.like(cb.function("unaccent", String.class, cb.lower(getFieldPath(root, filterField.getField()).as(String.class))), unaccentValueEnds);
                 break;
             case DOES_NOT_END_WITH:
-                result = cb.notLike(cb.lower(root.get(filterField.getField())), "%" + strToSearch);
+                result = cb.notLike(cb.function("unaccent", String.class, cb.lower(getFieldPath(root, filterField.getField()).as(String.class))), unaccentValueEnds);
                 break;
             case EQUAL:
-                result = cb.equal(getFieldPath(root, filterField.getField()), filterField.getValue());
+                if (filterField.getValue() instanceof String) {
+                    result = cb.equal(cb.function("unaccent", String.class, cb.lower(getFieldPath(root, filterField.getField()).as(String.class))), unaccentValueEqual);
+                } else {
+                    result = cb.equal(getFieldPath(root, filterField.getField()), filterField.getValue());
+                }
                 break;
             case NOT_EQUAL:
-                result = cb.notEqual(root.get(filterField.getField()), filterField.getValue());
+                result = cb.notEqual(getFieldPath(root, filterField.getField()), filterField.getValue());
                 break;
             case NUL:
-                result = cb.isNull(root.get(filterField.getField()));
+                result = cb.isNull(getFieldPath(root, filterField.getField()));
                 break;
             case NOT_NULL:
-                result = cb.isNotNull(root.get(filterField.getField()));
+                result = cb.isNotNull(getFieldPath(root, filterField.getField()));
                 break;
             case GREATER_THAN:
-                result = cb.greaterThan(root.get(filterField.getField()), (Comparable) filterField.getValue());
+                result = cb.greaterThan((Expression) getFieldPath(root, filterField.getField()), (Comparable) filterField.getValue());
                 break;
             case GREATER_THAN_EQUAL:
                 if (filterField.getEnumName() != null && filterField.getEnumName().equals(EnumName.JS_DATE)) {
-                    result = cb.greaterThanOrEqualTo(root.get(filterField.getField()), Helper.getDateFromJsString(filterField.getValue().toString()));
+                    result = cb.greaterThanOrEqualTo((Expression) getFieldPath(root, filterField.getField()), (Comparable) Helper.getDateFromJsString(filterField.getValue().toString()));
                 } else {
-                    result = cb.greaterThanOrEqualTo(root.get(filterField.getField()), (Comparable) filterField.getValue());
+                    result = cb.greaterThanOrEqualTo((Expression) getFieldPath(root, filterField.getField()), (Comparable) filterField.getValue());
                 }
                 break;
             case LESS_THAN:
-                result = cb.lessThan(root.get(filterField.getField()), (Comparable) filterField.getValue());
+                result = cb.lessThan((Expression) getFieldPath(root, filterField.getField()), (Comparable) filterField.getValue());
                 break;
             case LESS_THAN_EQUAL:
                 if (filterField.getEnumName() != null && filterField.getEnumName().equals(EnumName.JS_DATE)) {
-                    result = cb.lessThanOrEqualTo(root.get(filterField.getField()), Helper.getDateFromJsString(filterField.getValue().toString()));
+                    result = cb.lessThanOrEqualTo((Expression) getFieldPath(root, filterField.getField()), (Comparable) Helper.getDateFromJsString(filterField.getValue().toString()));
                 } else {
-                    result = cb.lessThanOrEqualTo(root.get(filterField.getField()), (Comparable) filterField.getValue());
+                    result = cb.lessThanOrEqualTo((Expression) getFieldPath(root, filterField.getField()), (Comparable) filterField.getValue());
                 }
                 break;
             case IN:
-                CriteriaBuilder.In<Object> inClause = cb.in(root.get(filterField.getField()));
+                CriteriaBuilder.In<Object> inClause = cb.in(getFieldPath(root, filterField.getField()));
                 filterField.getValues().forEach(value -> inClause.value(getRealValue(filterField.getEnumName(), value)));
                 result = inClause;
                 break;
@@ -126,12 +140,12 @@ public class WrapperSpecification<T> implements Specification<T> {
         return value;
     }
 
-    private Path<T> getFieldPath(Root<T> root, String field) {
+    private Path getFieldPath(Root<T> root, String field) {
         // Split the field path using dot notation
         String[] fieldNames = field.split("\\.");
 
         // Traverse the field path to get the Path object
-        Path<T> path = root;
+        Path path = root;
         for (String fieldName : fieldNames) {
             path = path.get(fieldName);
         }

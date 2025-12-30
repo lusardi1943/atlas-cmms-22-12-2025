@@ -18,7 +18,7 @@ import java.util.Collections;
 import java.util.Date;
 
 @Mapper(componentModel = "spring", uses = {CustomerMapper.class, VendorMapper.class, UserMapper.class,
-        TeamMapper.class, FileMapper.class, PartMapper.class, FileMapper.class})
+        TeamMapper.class, FileMapper.class, PartMapper.class, LocationMapper.class})
 public interface AssetMapper {
     Asset updateAsset(@MappingTarget Asset entity, AssetPatchDTO dto);
 
@@ -29,6 +29,7 @@ public interface AssetMapper {
 
     @Mapping(target = "parentId", source = "parentAsset.id")
     @Mapping(target = "locationId", source = "location.id")
+    @Mapping(target = "locationName", source = "location.name")
     AssetMiniDTO toMiniDto(Asset model);
 
     @AfterMapping

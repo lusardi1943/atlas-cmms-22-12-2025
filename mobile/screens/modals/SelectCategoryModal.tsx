@@ -12,12 +12,13 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from '../../store';
 import Category from '../../models/category';
 import { getCategories } from '../../slices/category';
-import { Checkbox, Divider, Text, useTheme } from 'react-native-paper';
+import { Checkbox, Divider, Searchbar, Text, useTheme } from 'react-native-paper';
+import { includesNormalized } from '../../utils/strings';
 
 export default function SelectCategoriesModal({
-                                                navigation,
-                                                route
-                                              }: RootStackScreenProps<'SelectCategories'>) {
+  navigation,
+  route
+}: RootStackScreenProps<'SelectCategories'>) {
   const { onChange, selected, multiple, type } = route.params;
   const theme = useTheme();
   const { t }: { t: any } = useTranslation();
@@ -25,6 +26,7 @@ export default function SelectCategoriesModal({
   const { categories } = useSelector((state) => state.categories);
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const currentCategories = categories[type] ?? [];
   useEffect(() => {
     if (currentCategories.length) {
@@ -82,7 +84,13 @@ export default function SelectCategoriesModal({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Searchbar
+        placeholder={t('search')}
+        onChangeText={setSearchQuery}
+        value={searchQuery}
+        style={{ backgroundColor: theme.colors.background }}
+      />
       <ScrollView
         // refreshControl={
         //   <RefreshControl refreshing={loadingGet} onRefresh={() => dispatch(getCategories())} />}
@@ -91,36 +99,39 @@ export default function SelectCategoriesModal({
           backgroundColor: theme.colors.background
         }}
       >
-        {currentCategories.map((category) => (
-          <TouchableOpacity
-            onPress={() => {
-              toggle(category.id);
-            }}
-            key={category.id}
-            style={{
-              borderRadius: 5,
-              padding: 15,
-              backgroundColor: 'white',
-              display: 'flex',
-              flexDirection: 'row',
-              elevation: 2,
-              alignItems: 'center'
-            }}
-          >
-            {multiple && (
-              <Checkbox
-                status={
-                  selectedIds.includes(category.id) ? 'checked' : 'unchecked'
-                }
-                onPress={() => {
-                  toggle(category.id);
-                }}
-              />
-            )}
-            <Text variant={'titleMedium'}>{category.name}</Text>
-            <Divider />
-          </TouchableOpacity>
-        ))}
+        {currentCategories
+          .filter((category) => includesNormalized(category.name, searchQuery))
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((category) => (
+            <TouchableOpacity
+              onPress={() => {
+                toggle(category.id);
+              }}
+              key={category.id}
+              style={{
+                borderRadius: 5,
+                padding: 15,
+                backgroundColor: 'white',
+                display: 'flex',
+                flexDirection: 'row',
+                elevation: 2,
+                alignItems: 'center'
+              }}
+            >
+              {multiple && (
+                <Checkbox
+                  status={
+                    selectedIds.includes(category.id) ? 'checked' : 'unchecked'
+                  }
+                  onPress={() => {
+                    toggle(category.id);
+                  }}
+                />
+              )}
+              <Text variant={'titleMedium'}>{category.name}</Text>
+              <Divider />
+            </TouchableOpacity>
+          ))}
       </ScrollView>
     </View>
   );

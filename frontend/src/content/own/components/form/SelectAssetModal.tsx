@@ -9,83 +9,145 @@ import {
   DialogTitle,
   IconButton,
   Typography,
-  useTheme
+  useTheme,
+  List,
+  ListItem,
+  Collapse,
+  Checkbox,
+  Stack
 } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from '../../../../store';
-import { getAssetsMini, resetAssetsHierarchy } from '../../../../slices/asset';
-import CustomDataGrid, { CustomDatagridColumn } from '../CustomDatagrid';
-import {
-  GridEventListener,
-  GridRenderCellParams,
-  GridRow,
-  GridSelectionModel
-} from '@mui/x-data-grid';
-import { DataGridProProps, useGridApiRef } from '@mui/x-data-grid-pro';
+import { getAssetsMini } from '../../../../slices/asset';
 import { AssetMiniDTO } from '../../../../models/owns/asset';
-import { GroupingCellWithLazyLoading } from '../../Assets/GroupingCellWithLazyLoading';
 import ReplayTwoToneIcon from '@mui/icons-material/ReplayTwoTone';
-import { Pageable } from '../../../../models/owns/page';
 import NoRowsMessageWrapper from '../NoRowsMessageWrapper';
 import { usePrevious } from '../../../../hooks/usePrevious';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import SearchIcon from '@mui/icons-material/Search';
+import { InputAdornment, TextField } from '@mui/material';
 
 interface SelectAssetModalProps {
   open: boolean;
   onClose: () => void;
-  onSelect: (assets: AssetMiniDTO[]) => void; // Changed to handle array of assets
-  excludedAssetIds?: number[]; // Changed to array for multiple exclusions
+  onSelect: (assets: AssetMiniDTO[]) => void;
+  excludedAssetIds?: number[];
   locationId?: number;
-  maxSelections?: number; // Optional limit for selections
-  initialSelectedAssets?: AssetMiniDTO[]; // Optional pre-selected assets
+  maxSelections?: number;
+  initialSelectedAssets?: AssetMiniDTO[];
 }
 
-const getAssetRows = (assets: AssetMiniDTO[]): IRow[] => {
-  // Build a map of parent to children
-  const assetsByParent: { [key: number]: number[] } = {};
-  const assetMap: { [key: number]: AssetMiniDTO } = {};
+interface AssetTreeNode extends AssetMiniDTO {
+  children: AssetTreeNode[];
+}
 
-  // Create asset map for quick lookup
-  assets.forEach((asset) => {
-    assetMap[asset.id] = asset;
-  });
+interface RecursiveAssetSelectionItemProps {
+  node: AssetTreeNode;
+  depth?: number;
+  isSelected: (id: number) => boolean;
+  onToggle: (node: AssetTreeNode) => void;
+  single: boolean;
+}
 
-  // Build parent-children relationships
-  assets.forEach((asset) => {
-    if (asset.parentId) {
-      if (!assetsByParent[asset.parentId]) {
-        assetsByParent[asset.parentId] = [];
-      }
-      assetsByParent[asset.parentId].push(asset.id);
-    }
-  });
+/**
+ * Componente recursivo para renderizar cada nodo del árbol de activos.
+ * Cambio: Movido fuera del componente principal para evitar pérdida de estado en re-renders.
+ * Impacto: Mejora la estabilidad del estado 'expanded' y el rendimiento general.
+ */
+const RecursiveAssetSelectionItem: React.FC<RecursiveAssetSelectionItemProps> = ({
+  node,
+  depth = 0,
+  isSelected,
+  onToggle,
+  single
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const theme = useTheme();
+  const hasChildren = node.children && node.children.length > 0;
+  const selected = isSelected(node.id);
 
-  // Helper function to build hierarchy path
-  const buildHierarchy = (assetId: number): number[] => {
-    const hierarchy: number[] = [];
-    let currentAsset = assetMap[assetId];
-    hierarchy.unshift(currentAsset.id);
-
-    while (
-      currentAsset.parentId &&
-      !hierarchy.includes(currentAsset.parentId)
-    ) {
-      hierarchy.unshift(currentAsset.parentId);
-      currentAsset = assetMap[currentAsset.parentId];
-    }
-
-    return hierarchy;
-  };
-
-  return assets.map((asset) => {
-    const hierarchy = buildHierarchy(asset.id);
-    return {
-      ...asset,
-      hierarchy,
-      hasChildren: !!assetsByParent[asset.id]
-    };
-  });
+  return (
+    <Box>
+      <ListItem
+        disablePadding
+        sx={{
+          py: 0.5,
+          pl: depth * 4, // Cambio: depth * 2 → depth * 4 para coincidir con LocationDetails. Impacto: Jerarquía visual clara.
+          display: 'flex',
+          alignItems: 'center',
+          '&:hover': { backgroundColor: theme.colors.alpha.black[5] }
+        }}
+      >
+        <Box sx={{ width: 32, display: 'flex', justifyContent: 'center' }}>
+          {hasChildren && (
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded(!expanded);
+              }}
+            >
+              {expanded ? (
+                <ExpandMoreIcon fontSize="small" />
+              ) : (
+                <ChevronRightIcon fontSize="small" />
+              )}
+            </IconButton>
+          )}
+        </Box>
+        {!single && (
+          <Checkbox
+            size="small"
+            checked={selected}
+            onChange={() => onToggle(node)}
+            sx={{ p: 0.5, mr: 1 }}
+          />
+        )}
+        <Box
+          sx={{ cursor: 'pointer', flex: 1, py: 1 }}
+          onClick={() => onToggle(node)}
+        >
+          <Typography
+            sx={{
+              fontWeight: '600',
+              fontSize: '0.9rem',
+              color: theme.colors.primary.main,
+              lineHeight: 1.1,
+              '&:hover': { textDecoration: 'underline' }
+            }}
+          >
+            {node.name}
+          </Typography>
+          <Typography
+            variant="subtitle2"
+            color="textSecondary"
+            sx={{ fontSize: '0.7rem' }}
+          >
+            ID: {node.customId}
+          </Typography>
+        </Box>
+      </ListItem>
+      {hasChildren && (
+        <Collapse in={expanded} timeout="auto" unmountOnExit>
+          <List disablePadding>
+            {node.children.map((child) => (
+              <RecursiveAssetSelectionItem
+                key={child.id}
+                node={child}
+                depth={depth + 1}
+                isSelected={isSelected}
+                onToggle={onToggle}
+                single={single}
+              />
+            ))}
+          </List>
+        </Collapse>
+      )}
+    </Box>
+  );
 };
-type IRow = AssetMiniDTO & { hierarchy: number[]; hasChildren: boolean };
+
 const SelectAssetModal: React.FC<SelectAssetModalProps> = ({
   open,
   onClose,
@@ -97,131 +159,59 @@ const SelectAssetModal: React.FC<SelectAssetModalProps> = ({
 }) => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const apiRef = useGridApiRef();
-  const theme = useTheme();
   const { loadingGet, assetsMini } = useSelector((state) => state.assets);
-  const initialized = useRef<boolean>(false);
   const single = maxSelections === 1;
 
-  const assetsHierarchy: IRow[] = useMemo(
-    () => getAssetRows(assetsMini),
-    [assetsMini.length]
-  );
-
-  // State for tracking selected assets
   const [selectedAssets, setSelectedAssets] = useState<AssetMiniDTO[]>(
     initialSelectedAssets
   );
-  const [selectionModel, setSelectionModel] = useState<GridSelectionModel>(
-    initialSelectedAssets.map((asset) => asset.id)
-  );
+  const [query, setQuery] = useState('');
+  const lastFetchedLocationId = useRef<number | undefined>(undefined);
   const previousInitialSelectedAssets = usePrevious(initialSelectedAssets);
 
-  const handleReset = (callApi: boolean) => {
+  const handleReset = (callApi: boolean, locId?: number) => {
     if (callApi) {
-      dispatch(getAssetsMini());
+      dispatch(getAssetsMini(locId));
+      lastFetchedLocationId.current = locId;
     }
   };
 
   useEffect(() => {
-    if (
-      open &&
-      (!initialized.current ||
+    if (open) {
+      // Fetch if never fetched OR if locationId changed
+      if (lastFetchedLocationId.current !== locationId) {
+        handleReset(true, locationId);
+      }
+
+      // Update local selection if initial assets changed
+      if (
         JSON.stringify(previousInitialSelectedAssets) !==
-          JSON.stringify(initialSelectedAssets))
-    ) {
-      initialized.current = true;
-      handleReset(true);
-      if (initialSelectedAssets?.length) {
-        setSelectedAssets(initialSelectedAssets);
-        setSelectionModel(initialSelectedAssets.map((asset) => asset.id));
-      } else {
-        setSelectedAssets([]);
-        setSelectionModel([]);
+        JSON.stringify(initialSelectedAssets)
+      ) {
+        setSelectedAssets(initialSelectedAssets || []);
       }
     }
-  }, [open, initialSelectedAssets, previousInitialSelectedAssets]);
+  }, [open, initialSelectedAssets, previousInitialSelectedAssets, locationId]);
 
   useEffect(() => {
     if (single && open) {
       setSelectedAssets([]);
-      setSelectionModel([]);
     }
-  }, [open]);
+  }, [open, single]);
 
-  const columns: CustomDatagridColumn[] = [
-    {
-      field: 'customId',
-      headerName: t('id'),
-      flex: 1
-    },
-    {
-      field: 'name',
-      headerName: t('name'),
-      flex: 1,
-      renderCell: (params: GridRenderCellParams<string>) => (
-        <Box sx={{ fontWeight: 'bold' }}>{params.value}</Box>
-      )
-    }
-  ];
-
-  const groupingColDef: DataGridProProps['groupingColDef'] = {
-    headerName: t('hierarchy'),
-    renderCell: (params) => <GroupingCellWithLazyLoading {...params} />
-  };
-
-  const CustomRow = (props: React.ComponentProps<typeof GridRow>) => {
-    const rowNode = apiRef.current.getRowNode(props.rowId);
-    return (
-      <GridRow
-        {...props}
-        style={
-          (rowNode?.depth ?? 0) > 0
-            ? {
-                backgroundColor:
-                  rowNode.depth % 2 === 0
-                    ? theme.colors.primary.light
-                    : theme.colors.primary.main,
-                color: 'white'
-              }
-            : undefined
-        }
-      />
-    );
-  };
-
-  const handleRowClick: GridEventListener<'rowClick'> = (params) => {
-    // Prevent selection of loading rows or excluded assets
-    if (typeof params.id === 'string' && params.id.startsWith('loading_'))
-      return;
-    if (excludedAssetIds.includes(params.id as number)) return;
-
-    // Get the current selection model
-    const currentSelectionModel = [...selectionModel];
-
-    // Check if the item is already selected
-    const selectedIndex = currentSelectionModel.indexOf(params.id);
-
-    // Toggle selection
-    if (selectedIndex === -1) {
-      // Check maximum selections limit if applicable
-      if (maxSelections && currentSelectionModel.length >= maxSelections) {
-        return; // Do not add if max is reached
-      }
-      currentSelectionModel.push(params.id);
+  const onToggleSelection = (asset: AssetMiniDTO) => {
+    const isAlreadySelected = selectedAssets.some((item) => item.id === asset.id);
+    if (isAlreadySelected) {
+      setSelectedAssets(selectedAssets.filter((item) => item.id !== asset.id));
     } else {
-      currentSelectionModel.splice(selectedIndex, 1);
-    }
-    setSelectionModel(currentSelectionModel);
-
-    // Update the selected assets array
-    const updatedSelectedAssets = currentSelectionModel.map((id) => {
-      return apiRef.current.getRow(id) as IRow;
-    });
-    setSelectedAssets(updatedSelectedAssets);
-    if (single) {
-      onSelect(updatedSelectedAssets);
-      onClose();
+      if (single) {
+        onSelect([asset]);
+        onClose();
+      } else {
+        if (!maxSelections || selectedAssets.length < maxSelections) {
+          setSelectedAssets([...selectedAssets, asset]);
+        }
+      }
     }
   };
 
@@ -230,21 +220,79 @@ const SelectAssetModal: React.FC<SelectAssetModalProps> = ({
     onClose();
   };
 
-  const handleRemoveSelection = (assetId: number) => {
-    const updatedSelectionModel = selectionModel.filter((id) => id !== assetId);
-    setSelectionModel(updatedSelectionModel);
+  /**
+   * Construye el árbol de activos preservando la jerarquía completa.
+   * Cambio: Implementado algoritmo de preservación de ancestros (path-preserving).
+   * Impacto: Evita nodos huérfanos al filtrar, manteniendo padres visibles para contexto.
+   */
+  const mapAssetsToTree = (assets: AssetMiniDTO[]): AssetTreeNode[] => {
+    const assetMap = new Map<number, AssetTreeNode>();
+    const allAssetMap = new Map<number, AssetMiniDTO>();
 
-    const updatedSelectedAssets = selectedAssets.filter(
-      (asset) => asset.id !== assetId
-    );
-    setSelectedAssets(updatedSelectedAssets);
+    // Map all available assets for path lookup
+    assets.forEach(asset => allAssetMap.set(Number(asset.id), asset));
+
+    // Determine which assets should be visible (matches query AND matches location if applicable)
+    // Actually, for location, the backend already filters. 
+    // But for query, we want to keep parents of matches.
+    const matchedAssets = assets.filter(asset => {
+      const matchesSearch = !query ||
+        asset.name.toLowerCase().includes(query.toLowerCase()) ||
+        asset.customId.toLowerCase().includes(query.toLowerCase());
+      const isNotExcluded = !excludedAssetIds.includes(asset.id);
+      return matchesSearch && isNotExcluded;
+    });
+
+    const visibleIds = new Set<number>();
+
+    // For each matched asset, include it and all its ancestors
+    matchedAssets.forEach(asset => {
+      let current: AssetMiniDTO | undefined = asset;
+      while (current) {
+        visibleIds.add(Number(current.id));
+        current = current.parentId ? allAssetMap.get(Number(current.parentId)) : undefined;
+      }
+    });
+
+    const roots: AssetTreeNode[] = [];
+
+    // Build the tree only using visible items
+    // First, populate the map with copies
+    visibleIds.forEach(id => {
+      const asset = allAssetMap.get(id);
+      if (asset) {
+        assetMap.set(id, { ...asset, children: [] });
+      }
+    });
+
+    // Link them
+    visibleIds.forEach(id => {
+      const node = assetMap.get(id);
+      if (node) {
+        const pId = node.parentId ? Number(node.parentId) : null;
+        if (pId && assetMap.has(pId)) {
+          assetMap.get(pId).children.push(node);
+        } else {
+          roots.push(node);
+        }
+      }
+    });
+
+    // Sort alphabetically? Optional.
+    const sortNodes = (nodes: AssetTreeNode[]) => {
+      nodes.sort((a, b) => a.name.localeCompare(b.name));
+      nodes.forEach(n => sortNodes(n.children));
+    };
+    sortNodes(roots);
+
+    return roots;
   };
 
-  const filteredAssetsHierarchy = assetsHierarchy.filter(
-    (asset) =>
-      !excludedAssetIds.includes(asset.id) &&
-      (locationId ? asset.locationId === locationId : true)
-  );
+  const assetTree = useMemo(() => mapAssetsToTree(assetsMini), [
+    assetsMini,
+    excludedAssetIds,
+    query
+  ]);
 
   return (
     <Dialog fullWidth maxWidth="md" open={open} onClose={onClose}>
@@ -258,7 +306,7 @@ const SelectAssetModal: React.FC<SelectAssetModalProps> = ({
       >
         <Typography variant="h4">{t('select_asset')}</Typography>
         <IconButton
-          onClick={() => handleReset(true)}
+          onClick={() => handleReset(true, locationId)}
           color="primary"
           size="small"
         >
@@ -266,13 +314,30 @@ const SelectAssetModal: React.FC<SelectAssetModalProps> = ({
         </IconButton>
       </DialogTitle>
 
-      {selectedAssets.length > 0 && (
+      <Box sx={{ px: 2, pb: 1 }}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder={t('search_asset')}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            )
+          }}
+        />
+      </Box>
+
+      {selectedAssets.length > 0 && !single && (
         <Box sx={{ px: 2, py: 1, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
           {selectedAssets.map((asset) => (
             <Chip
               key={asset.id}
               label={`${asset.customId}: ${asset.name}`}
-              onDelete={() => handleRemoveSelection(asset.id)}
+              onDelete={() => onToggleSelection(asset)}
               color="primary"
               variant="outlined"
             />
@@ -280,49 +345,22 @@ const SelectAssetModal: React.FC<SelectAssetModalProps> = ({
         </Box>
       )}
 
-      <DialogContent dividers sx={{ p: 1, height: '60vh' }}>
-        <Box sx={{ height: '100%', width: '100%' }}>
-          <CustomDataGrid
-            pro
-            treeData
-            apiRef={apiRef}
-            columns={columns}
-            rows={filteredAssetsHierarchy}
-            loading={loadingGet}
-            getRowId={(row) => row.id}
-            getRowHeight={() => 'auto'}
-            getTreeDataPath={(row) => row.hierarchy.map(String)}
-            groupingColDef={groupingColDef}
-            disableColumnFilter
-            checkboxSelection={!single}
-            selectionModel={selectionModel}
-            onSelectionModelChange={(newSelectionModel) => {
-              if (loadingGet) return;
-              if (maxSelections && newSelectionModel.length > maxSelections) {
-                return;
-              }
-              setSelectionModel(newSelectionModel);
-              const updatedSelectedAssets = newSelectionModel.map((id) => {
-                return apiRef.current.getRow(id) as IRow;
-              });
-
-              setSelectedAssets(updatedSelectedAssets);
-            }}
-            components={{
-              Row: CustomRow,
-              NoRowsOverlay: () => (
-                <NoRowsMessageWrapper
-                  message={t('noRows.asset.message')}
-                  action={t('noRows.asset.action')}
-                />
-              )
-            }}
-            onRowClick={handleRowClick}
-            initialState={{
-              columns: { columnVisibilityModel: {} }
-            }}
-          />
-        </Box>
+      <DialogContent dividers sx={{ p: 0, height: '60vh' }}>
+        {assetTree.length === 0 && !loadingGet ? (
+          <NoRowsMessageWrapper message={t('noRows.asset.message')} action="" />
+        ) : (
+          <List sx={{ py: 0 }}>
+            {assetTree.map((node) => (
+              <RecursiveAssetSelectionItem
+                key={node.id}
+                node={node}
+                isSelected={(id) => selectedAssets.some((a) => a.id === id)}
+                onToggle={onToggleSelection}
+                single={single}
+              />
+            ))}
+          </List>
+        )}
       </DialogContent>
       {!single && (
         <DialogActions sx={{ p: 2 }}>

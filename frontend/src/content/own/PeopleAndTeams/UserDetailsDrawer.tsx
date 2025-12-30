@@ -44,6 +44,7 @@ interface PropsType {
 }
 
 function UserDetailsDrawer({ user }: PropsType) {
+  if (!user) return null;
   const { t }: { t: any } = useTranslation();
   const theme = useTheme();
   const dispatch = useDispatch();
@@ -67,39 +68,39 @@ function UserDetailsDrawer({ user }: PropsType) {
   const fieldsToRender = (
     user: OwnUser
   ): { label: string; value: string | number }[] => [
-    {
-      label: t('id'),
-      value: user.id
-    },
-    {
-      label: t('first_name'),
-      value: user.firstName
-    },
-    {
-      label: t('last_name'),
-      value: user.lastName
-    },
-    {
-      label: t('email'),
-      value: user.email
-    },
-    {
-      label: t('phone'),
-      value: user.phone
-    },
-    {
-      label: t('job_title'),
-      value: user.jobTitle
-    },
-    {
-      label: t('role'),
-      value: user.role.name
-    },
-    {
-      label: t('hourly_rate'),
-      value: user.rate
-    }
-  ];
+      {
+        label: t('id'),
+        value: user.id
+      },
+      {
+        label: t('first_name'),
+        value: user.firstName
+      },
+      {
+        label: t('last_name'),
+        value: user.lastName
+      },
+      {
+        label: t('email'),
+        value: user.email
+      },
+      {
+        label: t('phone'),
+        value: user.phone
+      },
+      {
+        label: t('job_title'),
+        value: user.jobTitle
+      },
+      {
+        label: t('role'),
+        value: user.role.name
+      },
+      {
+        label: t('hourly_rate'),
+        value: user.rate
+      }
+    ];
 
   //////////////////////////////////////////////////////////////////////////////////////////////
   const chart3Options: ApexOptions = {

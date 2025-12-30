@@ -17,5 +17,6 @@ public class AssetMiniDTO {
     private Long parentId;
 
     private Long locationId;
+    private String locationName;
 
 }

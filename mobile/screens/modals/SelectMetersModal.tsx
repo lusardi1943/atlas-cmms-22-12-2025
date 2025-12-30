@@ -13,12 +13,13 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from '../../store';
 import { MeterMiniDTO } from '../../models/meter';
 import { getMetersMini } from '../../slices/meter';
-import { Checkbox, Divider, Text, useTheme } from 'react-native-paper';
+import { Checkbox, Divider, Searchbar, Text, useTheme } from 'react-native-paper';
+import { includesNormalized } from '../../utils/strings';
 
 export default function SelectMetersModal({
-                                            navigation,
-                                            route
-                                          }: RootStackScreenProps<'SelectMeters'>) {
+  navigation,
+  route
+}: RootStackScreenProps<'SelectMeters'>) {
   const { onChange, selected, multiple } = route.params;
   const theme = useTheme();
   const { t }: { t: any } = useTranslation();
@@ -26,6 +27,7 @@ export default function SelectMetersModal({
   const { metersMini, loadingGet } = useSelector((state) => state.meters);
   const [selectedMeters, setSelectedMeters] = useState<MeterMiniDTO[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     if (metersMini.length) {
@@ -83,7 +85,13 @@ export default function SelectMetersModal({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Searchbar
+        placeholder={t('search')}
+        onChangeText={setSearchQuery}
+        value={searchQuery}
+        style={{ backgroundColor: theme.colors.background }}
+      />
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -96,36 +104,41 @@ export default function SelectMetersModal({
           backgroundColor: theme.colors.background
         }}
       >
-        {metersMini.map((meter) => (
-          <TouchableOpacity
-            onPress={() => {
-              toggle(meter.id);
-            }}
-            key={meter.id}
-            style={{
-              borderRadius: 5,
-              padding: 15,
-              backgroundColor: 'white',
-              display: 'flex',
-              flexDirection: 'row',
-              elevation: 2,
-              alignItems: 'center'
-            }}
-          >
-            {multiple && (
-              <Checkbox
-                status={
-                  selectedIds.includes(meter.id) ? 'checked' : 'unchecked'
-                }
-                onPress={() => {
-                  toggle(meter.id);
-                }}
-              />
-            )}
-            <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>{meter.name}</Text>
-            <Divider />
-          </TouchableOpacity>
-        ))}
+        {metersMini
+          .filter((meter) => includesNormalized(meter.name, searchQuery))
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((meter) => (
+            <TouchableOpacity
+              onPress={() => {
+                toggle(meter.id);
+              }}
+              key={meter.id}
+              style={{
+                borderRadius: 5,
+                padding: 15,
+                backgroundColor: 'white',
+                display: 'flex',
+                flexDirection: 'row',
+                elevation: 2,
+                alignItems: 'center'
+              }}
+            >
+              {multiple && (
+                <Checkbox
+                  status={
+                    selectedIds.includes(meter.id) ? 'checked' : 'unchecked'
+                  }
+                  onPress={() => {
+                    toggle(meter.id);
+                  }}
+                />
+              )}
+              <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>
+                {meter.name}
+              </Text>
+              <Divider />
+            </TouchableOpacity>
+          ))}
       </ScrollView>
     </View>
   );

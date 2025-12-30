@@ -20,6 +20,13 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
 
     List<Asset> findByCompany_IdAndParentAssetIsNull(Long id, Pageable pageable);
 
+    /**
+     * Busca los activos raíz (sin padre directo) asignados a una ubicación específica.
+     * Impacto: Base para la navegación jerárquica contextual en dispositivos móviles.
+     */
+    @org.springframework.data.jpa.repository.Query("SELECT a FROM Asset a WHERE a.company.id = :companyId AND a.location.id = :locationId AND a.archived = false AND a.parentAsset IS NULL")
+    List<Asset> findByCompanyAndLocationAndParentAssetIsNull(@org.springframework.data.repository.query.Param("companyId") Long companyId, @org.springframework.data.repository.query.Param("locationId") Long locationId, Pageable pageable);
+
     List<Asset> findByParentAsset_Id(Long id, Sort sort);
 
     Integer countByParentAsset_Id(Long id);
@@ -27,6 +34,12 @@ public interface AssetRepository extends JpaRepository<Asset, Long>, JpaSpecific
     List<Asset> findByLocation_Id(Long id);
 
     List<Asset> findByNameIgnoreCaseAndCompany_Id(String assetName, Long companyId);
+
+    /**
+     * Busca activos por nombre y ubicación para garantizar la unicidad durante la importación.
+     * Impacto: Evita colisiones cuando hay activos llamados igual en diferentes sitios.
+     */
+    List<Asset> findByNameIgnoreCaseAndLocation_IdAndCompany_Id(String name, Long locationId, Long companyId);
 
     Optional<Asset> findByIdAndCompany_Id(Long id, Long companyId);
 

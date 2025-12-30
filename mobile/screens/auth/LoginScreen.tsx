@@ -53,7 +53,7 @@ export default function LoginScreen({
             setSubmitting(true);
             return login(values.email, values.password)
               .catch((err) => {
-                showSnackBar(t('wrong_credentials'), 'error');
+                showSnackBar(err.message || t('wrong_credentials'), 'error');
                 setStatus({ success: false });
               })
               .finally(() => {

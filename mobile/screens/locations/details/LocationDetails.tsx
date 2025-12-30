@@ -3,7 +3,7 @@ import Location from '../../../models/location';
 import * as React from 'react';
 import { Image, ScrollView, StyleSheet } from 'react-native';
 import { View } from '../../../components/Themed';
-import { Divider, Text, useTheme } from 'react-native-paper';
+import { Button, Divider, Text, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { UserMiniDTO } from '../../../models/user';
 import { Customer } from '../../../models/customer';
@@ -26,9 +26,9 @@ export default function LocationDetails({ location }: { location: Location }) {
     label: string;
     value: string | number;
   }[] = [
-    { label: t('name'), value: location?.name },
-    { label: t('address'), value: location?.address }
-  ];
+      { label: t('name'), value: location?.name },
+      { label: t('address'), value: location?.address }
+    ];
   return (
     <ScrollView
       style={{ ...styles.container, backgroundColor: theme.colors.background }}
@@ -70,6 +70,25 @@ export default function LocationDetails({ location }: { location: Location }) {
         getHref={(team: Team) => getTeamUrl(team.id)}
         getValueLabel={(team: Team) => team.name}
       />
+      {!location.hasChildren && (
+        <Button
+          mode="contained"
+          style={{
+            margin: 20,
+            marginTop: 10,
+            backgroundColor: '#1c1c1c',
+            borderRadius: 25
+          }}
+          onPress={() =>
+            navigation.navigate('Assets', {
+              locationId: location.id,
+              locationName: location.name
+            })
+          }
+        >
+          {t('view_assets') || 'Ver activos'}
+        </Button>
+      )}
     </ScrollView>
   );
 }

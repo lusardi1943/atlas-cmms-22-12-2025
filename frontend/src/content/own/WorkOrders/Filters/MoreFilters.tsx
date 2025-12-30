@@ -34,34 +34,34 @@ function MoreFilters({ filterFields, onFilterChange, onClose }: OwnProps) {
     operator?: SearchOperator;
     type: FilterFieldType;
   }[] = [
-    { accessor: 'assets', fieldName: 'asset', type: 'array' },
-    { accessor: 'categories', fieldName: 'category', type: 'array' },
-    { accessor: 'teams', fieldName: 'team', type: 'array' },
-    { accessor: 'primaryUsers', fieldName: 'primaryUser', type: 'array' },
-    { accessor: 'locations', fieldName: 'location', type: 'array' },
-    { accessor: 'createdBy', fieldName: 'createdBy', type: 'array' },
-    { accessor: 'completedBy', fieldName: 'completedBy', type: 'array' },
-    {
-      accessor: 'customers',
-      fieldName: 'customer',
-      operator: 'inm',
-      type: 'array'
-    },
-    {
-      accessor: 'assignedTo',
-      fieldName: 'assignedTo',
-      operator: 'inm',
-      type: 'array'
-    },
-    {
-      accessor: 'archived',
-      fieldName: 'archived',
-      type: 'simple'
-    },
-    { accessor: 'createdAt', fieldName: 'createdAt', type: 'date' },
-    { accessor: 'updatedAt', fieldName: 'updatedAt', type: 'date' },
-    { accessor: 'completedOn', fieldName: 'completedOn', type: 'date' }
-  ];
+      { accessor: 'assets', fieldName: 'asset', type: 'array' },
+      { accessor: 'categories', fieldName: 'category', type: 'array' },
+      { accessor: 'teams', fieldName: 'team', type: 'array' },
+      { accessor: 'primaryUsers', fieldName: 'primaryUser', type: 'array' },
+      { accessor: 'locations', fieldName: 'location', type: 'array' },
+      { accessor: 'createdBy', fieldName: 'createdBy', type: 'array' },
+      { accessor: 'completedBy', fieldName: 'completedBy', type: 'array' },
+      {
+        accessor: 'customers',
+        fieldName: 'customer',
+        operator: 'inm',
+        type: 'array'
+      },
+      {
+        accessor: 'assignedTo',
+        fieldName: 'assignedTo',
+        operator: 'inm',
+        type: 'array'
+      },
+      {
+        accessor: 'archived',
+        fieldName: 'archived',
+        type: 'simple'
+      },
+      { accessor: 'createdAt', fieldName: 'createdAt', type: 'date' },
+      { accessor: 'updatedAt', fieldName: 'updatedAt', type: 'date' },
+      { accessor: 'completedOn', fieldName: 'completedOn', type: 'date' }
+    ];
   const fields: Array<IField> = [
     {
       name: 'type',
@@ -100,7 +100,8 @@ function MoreFilters({ filterFields, onFilterChange, onClose }: OwnProps) {
       type: 'select',
       label: t('location'),
       type2: 'location',
-      multiple: true
+      multiple: true,
+      leafOnly: true
     },
     { name: 'peopleGroup', type: 'titleGroupField', label: t('people') },
     {
@@ -183,10 +184,10 @@ function MoreFilters({ filterFields, onFilterChange, onClose }: OwnProps) {
   };
   const getValuesFromfilterFields = (): {
     [key: string]:
-      | { label: string; value: string }
-      | { label: string; value: number }[]
-      | boolean
-      | [string, string];
+    | { label: string; value: string }
+    | { label: string; value: number }[]
+    | boolean
+    | [string, string];
   } => {
     const typeValue = filterFields.find(
       (filterField) => filterField.field === 'parentPreventiveMaintenance'
@@ -194,9 +195,9 @@ function MoreFilters({ filterFields, onFilterChange, onClose }: OwnProps) {
     return {
       type: typeValue
         ? {
-            label: getTypeLabelAndValue(typeValue.operation).label,
-            value: getTypeLabelAndValue(typeValue.operation).value
-          }
+          label: getTypeLabelAndValue(typeValue.operation).label,
+          value: getTypeLabelAndValue(typeValue.operation).value
+        }
         : { label: t('ALL'), value: 'ALL' },
       archived: filterFields.find(
         (filterField) => filterField.field === 'archived'
@@ -272,7 +273,7 @@ function MoreFilters({ filterFields, onFilterChange, onClose }: OwnProps) {
           validation={Yup.object().shape(shape)}
           submitText={t('save')}
           values={getValuesFromfilterFields()}
-          onChange={({ field, e }) => {}}
+          onChange={({ field, e }) => { }}
           onSubmit={async (values) => {
             let newFilters = [...filterFields];
             filtersConfig.forEach((filterConfig) => {

@@ -13,12 +13,13 @@ import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from '../../store';
 import { TeamMiniDTO } from '../../models/team';
 import { getTeamsMini } from '../../slices/team';
-import { Checkbox, Divider, Text, useTheme } from 'react-native-paper';
+import { Checkbox, Divider, Searchbar, Text, useTheme } from 'react-native-paper';
+import { includesNormalized } from '../../utils/strings';
 
 export default function SelectTeamsModal({
-                                           navigation,
-                                           route
-                                         }: RootStackScreenProps<'SelectTeams'>) {
+  navigation,
+  route
+}: RootStackScreenProps<'SelectTeams'>) {
   const { onChange, selected, multiple } = route.params;
   const theme = useTheme();
   const { t }: { t: any } = useTranslation();
@@ -26,6 +27,7 @@ export default function SelectTeamsModal({
   const { teamsMini, loadingGet } = useSelector((state) => state.teams);
   const [selectedTeams, setSelectedTeams] = useState<TeamMiniDTO[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
   useEffect(() => {
     if (teamsMini.length) {
@@ -83,7 +85,13 @@ export default function SelectTeamsModal({
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <Searchbar
+        placeholder={t('search')}
+        onChangeText={setSearchQuery}
+        value={searchQuery}
+        style={{ backgroundColor: theme.colors.background }}
+      />
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -96,34 +104,39 @@ export default function SelectTeamsModal({
           backgroundColor: theme.colors.background
         }}
       >
-        {teamsMini.map((team) => (
-          <TouchableOpacity
-            onPress={() => {
-              toggle(team.id);
-            }}
-            key={team.id}
-            style={{
-              borderRadius: 5,
-              padding: 15,
-              backgroundColor: 'white',
-              display: 'flex',
-              flexDirection: 'row',
-              elevation: 2,
-              alignItems: 'center'
-            }}
-          >
-            {multiple && (
-              <Checkbox
-                status={selectedIds.includes(team.id) ? 'checked' : 'unchecked'}
-                onPress={() => {
-                  toggle(team.id);
-                }}
-              />
-            )}
-            <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>{team.name}</Text>
-            <Divider />
-          </TouchableOpacity>
-        ))}
+        {teamsMini
+          .filter((team) => includesNormalized(team.name, searchQuery))
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .map((team) => (
+            <TouchableOpacity
+              onPress={() => {
+                toggle(team.id);
+              }}
+              key={team.id}
+              style={{
+                borderRadius: 5,
+                padding: 15,
+                backgroundColor: 'white',
+                display: 'flex',
+                flexDirection: 'row',
+                elevation: 2,
+                alignItems: 'center'
+              }}
+            >
+              {multiple && (
+                <Checkbox
+                  status={selectedIds.includes(team.id) ? 'checked' : 'unchecked'}
+                  onPress={() => {
+                    toggle(team.id);
+                  }}
+                />
+              )}
+              <Text style={{ flexShrink: 1 }} variant={'titleMedium'}>
+                {team.name}
+              </Text>
+              <Divider />
+            </TouchableOpacity>
+          ))}
       </ScrollView>
     </View>
   );

@@ -1404,6 +1404,7 @@ const locale = {
     'Aquí aparecerán actualizaciones importantes para ayudarle a seguir el progreso de su trabajo.',
   no_notification: 'Sin notificación',
   view_children: 'Ver activos hijos',
+  view_assets: 'Ver activos',
   loading: 'Cargando',
   please_wait: 'Espere por favor...',
   add_file: 'Agregar archivo',

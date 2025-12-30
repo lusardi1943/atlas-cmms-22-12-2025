@@ -19,12 +19,15 @@ export default interface Location extends Audit {
   workers: UserMiniDTO[];
   teams: TeamMiniDTO[];
   customId: string;
+  hasChildren: boolean;
 }
 export interface LocationMiniDTO {
   id: number;
   name: string;
   address: string;
   customId: string;
+  parentId: number;
+  hasChildren: boolean;
 }
 
 export interface LocationRow extends Location {

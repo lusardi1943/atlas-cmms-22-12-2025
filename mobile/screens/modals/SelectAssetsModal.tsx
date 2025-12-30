@@ -22,6 +22,7 @@ import {
   SegmentedButtons,
   IconButton
 } from 'react-native-paper';
+import { includesNormalized } from '../../utils/strings';
 
 // Interface extending AssetMiniDTO to explicitly include derived 'hasChildren'
 interface AssetHierarchyNode extends AssetMiniDTO {
@@ -121,9 +122,9 @@ export default function SelectAssetsModal({
   useEffect(() => {
     // This effect runs when view is 'hierarchy' OR when assetsHierarchy/currentHierarchyParent changes
     // Filter assetsHierarchy to find children of the current parent (or top-level items if parent is null)
-    const children = assetsHierarchy.filter(
-      (asset) => asset.parentId === (currentHierarchyParent?.id ?? null)
-    );
+    const children = assetsHierarchy
+      .filter((asset) => asset.parentId === (currentHierarchyParent?.id ?? null))
+      .sort((a, b) => a.name.localeCompare(b.name));
     setCurrentHierarchyLevel(children);
   }, [assetsHierarchy, currentHierarchyParent]); // Removed view dependency, logic now depends only on data/parent
 
@@ -216,9 +217,19 @@ export default function SelectAssetsModal({
             onPress={() => toggle(asset.id)} // Checkbox also toggles selection
           />
         )}
-        <Text style={styles.itemText} variant={'titleMedium'}>
-          {asset.name}
-        </Text>
+        <View style={{ flexShrink: 1 }}>
+          <Text style={styles.itemText} variant={'titleMedium'}>
+            {asset.name}
+          </Text>
+          {asset.locationName && (
+            <Text
+              style={[styles.itemText, { fontSize: 12, color: 'grey' }]}
+              variant={'bodySmall'}
+            >
+              {asset.locationName}
+            </Text>
+          )}
+        </View>
       </View>
       {/* Show drill-down icon only in hierarchy view if the item has children */}
       {isHierarchyView && asset.hasChildren && (
@@ -236,12 +247,22 @@ export default function SelectAssetsModal({
 
   // Filtered list for the 'list' view based on search query
   const filteredListAssets = useMemo(() => {
+    const sortByNameAndLocation = (a: AssetHierarchyNode, b: AssetHierarchyNode) => {
+      const locCompare = (a.locationName || '').localeCompare(b.locationName || '');
+      if (locCompare !== 0) return locCompare;
+      return a.name.localeCompare(b.name);
+    };
+
     if (!searchQuery) {
-      return assetsHierarchy; // Use derived hierarchy list for consistency if no search
+      return [...assetsHierarchy].sort(sortByNameAndLocation);
     }
-    return assetsHierarchy.filter((asset) =>
-      asset.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
-    );
+    return assetsHierarchy
+      .filter(
+        (asset) =>
+          includesNormalized(asset.name, searchQuery) ||
+          includesNormalized(asset.locationName, searchQuery)
+      )
+      .sort(sortByNameAndLocation);
   }, [assetsHierarchy, searchQuery]);
 
   return (

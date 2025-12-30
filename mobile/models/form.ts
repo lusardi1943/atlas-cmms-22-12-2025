@@ -12,36 +12,36 @@ export type CategoryType =
 export interface IField {
   label: string;
   type:
-    | 'number'
-    | 'text'
-    | 'file'
-    | 'groupCheckbox'
-    | 'select'
-    | 'titleGroupField'
-    | 'form'
-    | 'date'
-    | 'switch'
-    | 'partQuantity'
-    | 'coordinates'
-    | 'dateRange'
-    | 'nfc'
-    | 'barcode'
-    | 'audio'
-    | 'signature';
+  | 'number'
+  | 'text'
+  | 'file'
+  | 'groupCheckbox'
+  | 'select'
+  | 'titleGroupField'
+  | 'form'
+  | 'date'
+  | 'switch'
+  | 'partQuantity'
+  | 'coordinates'
+  | 'dateRange'
+  | 'nfc'
+  | 'barcode'
+  | 'audio'
+  | 'signature';
   type2?:
-    | 'customer'
-    | 'vendor'
-    | 'user'
-    | 'team'
-    | 'part'
-    | 'location'
-    | 'asset'
-    | 'priority'
-    | 'task'
-    | 'category'
-    | 'parentLocation'
-    | 'role'
-    | 'currency';
+  | 'customer'
+  | 'vendor'
+  | 'user'
+  | 'team'
+  | 'part'
+  | 'location'
+  | 'asset'
+  | 'priority'
+  | 'task'
+  | 'category'
+  | 'parentLocation'
+  | 'role'
+  | 'currency';
   category?: CategoryType;
   name?: string;
   placeholder?: string;
@@ -66,6 +66,7 @@ export interface IField {
   loading?: boolean;
   excluded?: number;
   relatedFields?: { field: string; value?: any; hide?: boolean }[];
+  leafOnly?: boolean;
 }
 
 export interface IHash<E> {

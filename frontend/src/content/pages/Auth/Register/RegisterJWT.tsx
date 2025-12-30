@@ -33,13 +33,23 @@ function RegisterJWT({
   role,
   invitationMode,
   onInvitationSuccess,
-  subscriptionPlanId
+  subscriptionPlanId,
+  onSubmit: onSubmitProp
 }: {
   email?: string | undefined;
   role?: number | undefined;
   invitationMode?: boolean;
   onInvitationSuccess?: () => void;
   subscriptionPlanId?: string;
+  /**
+   * Optional custom submit handler.
+   * If provided, it overrides the default registration logic.
+   * Used by CreateUser component to call the secure creation endpoint.
+   * 
+   * Manejador de envío personalizado opcional. Si se proporciona, anula la lógica de registro por defecto.
+   * Utilizado por el componente CreateUser para llamar al endpoint de creación segura.
+   */
+  onSubmit?: (values: any) => Promise<void>;
 }) {
   const { register, loginInternal, user } = useAuth();
   const isMountedRef = useRefMounted();
@@ -103,13 +113,30 @@ function RegisterJWT({
         valuesClone.phone =
           (values.countryCode ? `+${values.countryCode.phone}` : '') +
           `${values.phone}`;
+        if (onSubmitProp) {
+          return onSubmitProp(
+            role ? { ...valuesClone, role: { id: role } } : valuesClone
+          )
+            .then(() => {
+              if (invitationMode && onInvitationSuccess) onInvitationSuccess();
+            })
+            .catch((err) => {
+              showSnackBar(err.message || t('error_occurred'), 'error');
+            })
+            .finally(() => {
+              if (isMountedRef.current) {
+                setStatus({ success: true });
+                setSubmitting(false);
+              }
+            });
+        }
         return register(
           role ? { ...valuesClone, role: { id: role } } : valuesClone,
           invitationMode
         )
           .then(async (res) => {
             if (invitationMode) {
-              onInvitationSuccess();
+              if (onInvitationSuccess) onInvitationSuccess();
             } else {
               if (!(res && (await verify(res.message)))) {
                 if (!role) showSnackBar(t('verify_email'), 'success');
@@ -118,7 +145,7 @@ function RegisterJWT({
             }
           })
           .catch((err) => {
-            let errorMessage = 'An unknown error occurred';
+            let errorMessage = t('unknown_error_occurred');
 
             // Check if the error message contains a JSON string
             if (typeof err.message === 'string') {
@@ -134,7 +161,7 @@ function RegisterJWT({
               }
             } else {
               // In case err.message is not a string, just use the general error
-              errorMessage = 'An unknown error occurred';
+              errorMessage = t('unknown_error_occurred');
             }
             showSnackBar(errorMessage, 'error');
             console.error(err);
@@ -232,7 +259,7 @@ function RegisterJWT({
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Choose a country"
+                  label={t('choose_country')}
                   error={Boolean(touched.countryCode && errors.countryCode)}
                   inputProps={{
                     ...params.inputProps,

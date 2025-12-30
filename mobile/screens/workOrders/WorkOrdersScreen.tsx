@@ -78,14 +78,15 @@ export default function WorkOrdersScreen({
       filterFields: defaultFilterFields,
       pageSize: 10,
       pageNum: 0,
-      direction: 'DESC'
+      sortField: 'title',
+      direction: 'ASC'
     };
     let newFilterFields = [...initialCriteria.filterFields];
     filterFields.forEach(
       (filterField) =>
-        (newFilterFields = newFilterFields.filter(
-          (ff) => ff.field != filterField.field
-        ))
+      (newFilterFields = newFilterFields.filter(
+        (ff) => ff.field != filterField.field
+      ))
     );
     return {
       ...initialCriteria,
@@ -100,12 +101,15 @@ export default function WorkOrdersScreen({
       fromHomeInit.current = true;
       return;
     }
+    // Ordenación por defecto A-Z por título para Órdenes de Trabajo en Mobile.
+    // Impacto: Facilita la navegación alfabética en el dispositivo móvil.
     dispatch(
       getWorkOrders({
         ...criteria,
         pageSize: 10,
         pageNum: 0,
-        direction: 'DESC'
+        sortField: 'title',
+        direction: 'ASC'
       })
     );
     fromHomeInit.current = true;
@@ -127,12 +131,14 @@ export default function WorkOrdersScreen({
   };
 
   const onQueryChange = (query) => {
+    // Se añaden 'asset.name' y 'location.name' a los campos de búsqueda en móvil para permitir encontrar OTs por activo o sitio.
+    // Impacto: Facilita al técnico encontrar su trabajo basado en el contexto físico (dónde está o qué equipo está reparando).
     onSearchQueryChange<WorkOrder>(
       query,
       criteria,
       setCriteria,
       setSearchQuery,
-      ['title', 'description', 'feedback']
+      ['title', 'description', 'feedback', 'asset.name', 'location.name']
     );
   };
   useDebouncedEffect(
@@ -327,7 +333,7 @@ export default function WorkOrdersScreen({
                             (dayDiff(new Date(workOrder.dueDate), new Date()) <=
                               2 ||
                               new Date() > new Date(workOrder.dueDate)) &&
-                            workOrder.status !== 'COMPLETE'
+                              workOrder.status !== 'COMPLETE'
                               ? theme.colors.error
                               : theme.colors.grey
                           }

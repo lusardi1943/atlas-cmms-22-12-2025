@@ -187,15 +187,14 @@ function WorkOrders() {
         value: false
       }
     ],
+    // Configuración de búsqueda inicial: Se establece ordenación A-Z por defecto mediante 'sortField: title' y 'direction: ASC'.
+    // Impacto: Asegura que las OTs se presenten alfabéticamente al cargar la página, facilitando la localización.
     pageSize: 10,
     pageNum: 0,
-    direction: 'DESC'
+    sortField: 'title',
+    direction: 'ASC'
   };
-  const [criteria, setCriteria] = useState<SearchCriteria>({
-    ...initialCriteria,
-    sortField: 'updatedAt',
-    direction: 'DESC'
-  });
+  const [criteria, setCriteria] = useState<SearchCriteria>(initialCriteria);
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const openMenu = Boolean(anchorEl);
   const navigate = useNavigate();
@@ -262,6 +261,9 @@ function WorkOrders() {
   const onFilterChange = (newFilters: FilterField[]) => {
     const newCriteria = { ...criteria };
     newCriteria.filterFields = newFilters;
+    // Optimización de resultados: Al aplicar filtros manuales, se fuerza un pageSize de 1000 para asegurar que el usuario vea 
+    // todos los registros coincidentes sin limitaciones de paginación inicial.
+    newCriteria.pageSize = newFilters.length > 0 ? 1000 : 10;
     setCriteria(newCriteria);
   };
   useEffect(() => {
@@ -383,10 +385,10 @@ function WorkOrders() {
               params.value === 'IN_PROGRESS'
                 ? 'success'
                 : params.value === 'ON_HOLD'
-                ? 'warning'
-                : params.value === 'COMPLETE'
-                ? 'info'
-                : 'secondary'
+                  ? 'warning'
+                  : params.value === 'COMPLETE'
+                    ? 'info'
+                    : 'secondary'
             }
           />
           <Typography sx={{ ml: 1 }}>{t(params.value)}</Typography>
@@ -632,7 +634,8 @@ function WorkOrders() {
       type: 'select',
       type2: 'location',
       label: t('location'),
-      placeholder: t('select_location')
+      placeholder: t('select_location'),
+      leafOnly: true
     },
     {
       name: 'asset',
@@ -714,12 +717,12 @@ function WorkOrders() {
                 : null,
               location: locationParamObject
                 ? {
-                    label: locationParamObject.name,
-                    value: locationParamObject.id
-                  }
+                  label: locationParamObject.name,
+                  value: locationParamObject.id
+                }
                 : null
             }}
-            onChange={({ field, e }) => {}}
+            onChange={({ field, e }) => { }}
             onSubmit={async (values) => {
               if (workOrders.totalElements === 0)
                 fireGa4Event('first_wo_creation');
@@ -789,7 +792,7 @@ function WorkOrders() {
               tasks,
               ...getWOBaseValues(t, currentWorkOrder)
             }}
-            onChange={({ field, e }) => {}}
+            onChange={({ field, e }) => { }}
             onSubmit={async (values) => {
               let formattedValues = formatValues(values);
               try {

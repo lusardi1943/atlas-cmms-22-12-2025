@@ -44,6 +44,7 @@ export interface SearchCriteria {
   direction?: Direction;
   pageNum?: number;
   pageSize?: number;
+  sortField?: string;
 }
 export const getInitialPage = <T>(): Page<T> => {
   return {

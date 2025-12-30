@@ -26,9 +26,11 @@ import io.swagger.annotations.ApiParam;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -40,6 +42,7 @@ import javax.persistence.EntityManager;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -49,6 +52,7 @@ import java.util.stream.Collectors;
 @RequestMapping("/assets")
 @Api(tags = "asset")
 @RequiredArgsConstructor
+@Slf4j
 public class AssetController {
 
     private final AssetService assetService;
@@ -158,11 +162,27 @@ public class AssetController {
             @ApiResponse(code = 403, message = "Access denied"),
             @ApiResponse(code = 404, message = "Asset not found")})
     public List<AssetShowDTO> getChildrenById(@ApiParam("id") @PathVariable("id") Long id,
+                                              @RequestParam(required = false) Long locationId,
                                               Pageable pageable,
                                               HttpServletRequest req) {
         OwnUser user = userService.whoami(req);
-        if (id.equals(0L) && user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
-            return assetService.findByCompanyAndParentAssetNull(user.getCompany().getId(), pageable).stream().map(asset -> assetMapper.toShowDto(asset, assetService)).collect(Collectors.toList());
+        log.info("getChildrenById: id={}, locationId={}, user={}", id, locationId, user.getEmail());
+        if (id.equals(0L)) {
+            if (locationId != null) {
+                // Navegación contextual: obtenemos los activos que actúan como "raíz" dentro de este sitio específico.
+                // Impacto: Permite al usuario ver una jerarquía de activos filtrada por ubicación desde el primer nivel.
+                List<Asset> localRoots = assetService.findByCompanyAndLocationAndParentAssetIsNull(user.getCompany().getId(), locationId, 
+                        org.springframework.data.domain.PageRequest.of(0, 5000, pageable.getSort()));
+                
+                log.info("getChildrenById: Entregando {} activos raíz locales para la ubicación {}", localRoots.size(), locationId);
+                return localRoots.stream().map(asset -> assetMapper.toShowDto(asset, assetService)).collect(Collectors.toList());
+            }
+            if (user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
+                return assetService.findByCompanyAndParentAssetNull(user.getCompany().getId(), pageable).stream().map(asset -> assetMapper.toShowDto(asset, assetService)).collect(Collectors.toList());
+            }
+            // Si es Admin y no hay locationId, por defecto no mostramos nada para id=0 en este endpoint
+            // (los Admins suelen ver activos en la lista paginada general, no en jerarquía raíz global).
+            return Collections.emptyList();
         }
         Optional<Asset> optionalAsset = assetService.findById(id);
         if (optionalAsset.isPresent()) {
@@ -261,7 +281,7 @@ public class AssetController {
         OwnUser user = userService.whoami(req);
         List<Asset> assets = new ArrayList<>();
         if (locationId == null) {
-            assets = assetService.findByCompany(user.getCompany().getId());
+            assets = assetService.findByCompany(user.getCompany().getId(), Sort.by(Sort.Direction.ASC, "name"));
         } else {
             assets = assetService.findByLocation(locationId);
         }

@@ -97,20 +97,19 @@ export const pushOrRemove = (array: string[], push: boolean, value: string) => {
   return array;
 };
 
-export const onSearchQueryChange = <T>(
-  event,
+export const getNewCriteriaOnSearch = <T>(
+  query: string,
   criteria: SearchCriteria,
-  setCriteria: React.Dispatch<React.SetStateAction<SearchCriteria>>,
-  fieldsToSearch: Extract<keyof T, string>[]
-) => {
-  const query = event.target.value;
+  fieldsToSearch: string[]
+): SearchCriteria => {
   let newFilterFields: FilterField[] = [...criteria.filterFields];
 
   newFilterFields = newFilterFields.filter(
     // @ts-ignore
     (filterField) => !fieldsToSearch.includes(filterField.field)
   );
-  const firstField = fieldsToSearch.shift();
+  const fields = [...fieldsToSearch];
+  const firstField = fields.shift();
   if (query)
     newFilterFields = [
       ...newFilterFields,
@@ -118,14 +117,24 @@ export const onSearchQueryChange = <T>(
         field: firstField,
         value: query,
         operation: 'cn' as SearchOperator,
-        alternatives: fieldsToSearch.map((field) => ({
+        alternatives: fields.map((field) => ({
           field,
           operation: 'cn' as SearchOperator,
           value: query
         }))
       }
     ];
-  setCriteria({ ...criteria, filterFields: newFilterFields });
+  return { ...criteria, filterFields: newFilterFields };
+};
+
+export const onSearchQueryChange = <T>(
+  event,
+  criteria: SearchCriteria,
+  setCriteria: React.Dispatch<React.SetStateAction<SearchCriteria>>,
+  fieldsToSearch: string[]
+) => {
+  const query = event.target.value;
+  setCriteria(getNewCriteriaOnSearch(query, criteria, fieldsToSearch));
 };
 
 export const fireGa4Event = (

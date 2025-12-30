@@ -60,6 +60,8 @@ public class OwnUser extends Audit {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private boolean enabledInSubscription = true;
 
+    private Date deactivatedUntil;
+
     @ManyToOne(fetch = FetchType.LAZY)
     private Company company;
 

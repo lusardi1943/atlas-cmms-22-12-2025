@@ -18,7 +18,31 @@ export type CustomDatagridColumn = GridEnrichedColDef & {
 interface CustomDatagridProps extends DataGridProProps {
   notClickable?: boolean;
   pro?: boolean;
+  rows: any[];
   columns: CustomDatagridColumn[];
+  treeData?: boolean;
+  getTreeDataPath?: (row: any) => string[];
+  groupingColDef?: any;
+  initialState?: any;
+  apiRef?: any;
+  rowCount?: number;
+  page?: number;
+  pageSize?: number;
+  loading?: boolean;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
+  paginationMode?: 'client' | 'server';
+  sortingMode?: 'client' | 'server';
+  onSortModelChange?: any;
+  rowsPerPageOptions?: number[];
+  components?: any;
+  onRowClick?: any;
+  getRowHeight?: any;
+  disableSelectionOnClick?: boolean;
+  disableColumnFilter?: boolean;
+  headerHeight?: number;
+  rowHeight?: number;
+  sx?: any;
 }
 
 function CustomDataGrid(props: CustomDatagridProps) {

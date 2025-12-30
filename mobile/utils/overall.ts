@@ -69,21 +69,19 @@ export const pushOrRemove = (array: string[], push: boolean, value: string) => {
   return array;
 };
 
-export const onSearchQueryChange = <T>(
-  query,
+export const getNewCriteriaOnSearch = <T>(
+  query: string,
   criteria: SearchCriteria,
-  setCriteria: React.Dispatch<React.SetStateAction<SearchCriteria>>,
-  setSearchQuery: React.Dispatch<React.SetStateAction<string>>,
-  fieldsToSearch: Extract<keyof T, string>[]
-) => {
+  fieldsToSearch: string[]
+): SearchCriteria => {
   let newFilterFields: FilterField[] = [...criteria.filterFields];
 
   newFilterFields = newFilterFields.filter(
     // @ts-ignore
     (filterField) => !fieldsToSearch.includes(filterField.field)
   );
-  const firstField = fieldsToSearch.shift();
-  setSearchQuery(query);
+  const fields = [...fieldsToSearch];
+  const firstField = fields.shift();
   if (query) {
     newFilterFields = [
       ...newFilterFields,
@@ -91,7 +89,7 @@ export const onSearchQueryChange = <T>(
         field: firstField,
         value: query,
         operation: 'cn' as SearchOperator,
-        alternatives: fieldsToSearch.map((field) => ({
+        alternatives: fields.map((field) => ({
           field,
           operation: 'cn' as SearchOperator,
           value: query
@@ -99,7 +97,18 @@ export const onSearchQueryChange = <T>(
       }
     ];
   }
-  setCriteria({ ...criteria, filterFields: newFilterFields });
+  return { ...criteria, filterFields: newFilterFields };
+};
+
+export const onSearchQueryChange = <T>(
+  query,
+  criteria: SearchCriteria,
+  setCriteria: React.Dispatch<React.SetStateAction<SearchCriteria>>,
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>,
+  fieldsToSearch: string[]
+) => {
+  setSearchQuery(query);
+  setCriteria(getNewCriteriaOnSearch(query, criteria, fieldsToSearch));
 };
 
 export const getPriorityColor = (

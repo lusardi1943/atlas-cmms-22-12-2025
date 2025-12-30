@@ -12,6 +12,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
   api:
+    build: ./api
     image: intelloop/atlas-cmms-backend
     container_name: atlas-cmms-backend
     depends_on:
@@ -58,6 +59,7 @@ services:
     ports:
       - "8080:8080"
   frontend:
+    build: ./frontend
     image: intelloop/atlas-cmms-frontend
     container_name: atlas-cmms-frontend
     environment:

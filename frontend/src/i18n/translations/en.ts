@@ -765,6 +765,17 @@ const locale = {
   REQUESTER_name: 'Requester',
   REQUESTER_description:
     'Requesters can only submit work requests and view their status',
+  confirm_disable_user: 'Are you sure you want to disable {{user}}?',
+  user_disabled_success: 'User disabled successfully',
+  user_enabled_success: 'User enabled successfully',
+  enable: 'Enable',
+  disable: 'Disable',
+  delete: 'Delete',
+  confirm_delete_user: 'Are you sure you want to delete {{user}}?',
+  user_deleted_success: 'User deleted successfully',
+  view_disabled_users: 'View disabled users',
+  edit_email: 'Edit email',
+  deactivated_until: 'Deactivated until',
   select_user_role: 'Select user role',
   'noRows.team.message': 'Teams help you manage specific groups of people.',
   'noRows.team.action': "Press the '+' button to create a team.",
@@ -1313,10 +1324,6 @@ const locale = {
   switch_to_super_user: 'Switch to super admin',
   switch_account_description: 'Please choose an account to proceed',
   put_location_in_map: 'Put location in map',
-  confirm_disable_user:
-    'Are you sure you want to disable {{user}}? You will only be able to enable it after one month',
-  user_disabled_success: 'User disabled successfully',
-  disable: 'Disable',
   manufacturer: 'Manufacturer',
   power: 'Power',
   import_error: "The import didn't succeed",
@@ -1437,7 +1444,18 @@ const locale = {
     '{{created}} Work Order schedules have been created and {{updated}} have been updated',
   recurrence_type: 'Recurrence type',
   recurrence_based_on: 'Recurrence based on',
-  days_of_week: 'Days of week'
+  days_of_week: 'Days of week',
+  deactivate_user: 'Deactivate User',
+  indefinite: 'Indefinite',
+  until_a_date: 'Until a date',
+  reactivation_date: 'Reactivation Date',
+  user_invite_email_already_selected: 'This email is already selected',
+  user_invite_email_already_in_company: 'A user with this email is already in this company',
+  user_invite_email_invalid: 'This email is invalid',
+  user_invite_email_max_reached: 'You can invite a maximum of 20 users at once',
+  choose_country: 'Choose a country',
+  error_occurred: 'An error occurred',
+  unknown_error_occurred: 'An unknown error occurred'
 };
 
 export default locale;

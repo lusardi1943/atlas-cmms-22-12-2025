@@ -51,23 +51,24 @@ export default function InviteUserDialog({
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 500);
   };
+  // Valida el correo electrónico actual antes de añadirlo a la lista de invitados
   const verifyCurrentEmail = (): boolean => {
     if (currentEmail) {
       let error;
       if (emails.length < 20) {
         const emailsClone = [...emails];
         if (emailsClone.includes(currentEmail)) {
-          error = 'This email is already selected';
+          error = 'user_invite_email_already_selected';
         } else {
           if (users.content.map((user) => user.email).includes(currentEmail)) {
-            error = 'A user with this email is already in this company';
+            error = 'user_invite_email_already_in_company';
           } else {
             if (!currentEmail.match(emailRegExp)) {
-              error = 'This email is invalid';
+              error = 'user_invite_email_invalid';
             }
           }
         }
-      } else error = 'You can invite a maximum of 20 users at once';
+      } else error = 'user_invite_email_max_reached';
       if (error) {
         showSnackBar(t(error), 'error');
         setIsInviteSubmitting(false);

@@ -65,6 +65,12 @@ const slice = createSlice({
       const { assets } = action.payload;
       state.assetsMini = assets;
     },
+    clearAssets(state: AssetState) {
+      state.assets = getInitialPage<AssetDTO>();
+    },
+    clearAssetsHierarchy(state: AssetState) {
+      state.assetsHierarchy = [];
+    },
     addAsset(state: AssetState, action: PayloadAction<{ asset: AssetDTO }>) {
       const { asset } = action.payload;
       state.assets.content = [...state.assets.content, asset];
@@ -153,159 +159,165 @@ const slice = createSlice({
   }
 });
 
+export const assetActions = slice.actions;
+
 export const reducer = slice.reducer;
 
 export const getAssets =
   (criteria: SearchCriteria): AppThunk =>
-  async (dispatch) => {
-    try {
-      dispatch(slice.actions.setLoadingGet({ loading: true }));
-      const assets = await api.post<Page<AssetDTO>>(
-        `${basePath}/search`,
-        criteria
-      );
-      dispatch(slice.actions.getAssets({ assets }));
-    } finally {
-      dispatch(slice.actions.setLoadingGet({ loading: false }));
-    }
-  };
+    async (dispatch) => {
+      try {
+        dispatch(slice.actions.setLoadingGet({ loading: true }));
+        dispatch(slice.actions.clearAssets());
+        const assets = await api.post<Page<AssetDTO>>(
+          `${basePath}/search`,
+          criteria
+        );
+        dispatch(slice.actions.getAssets({ assets }));
+      } finally {
+        dispatch(slice.actions.setLoadingGet({ loading: false }));
+      }
+    };
 export const getMoreAssets =
   (criteria: SearchCriteria, pageNum: number): AppThunk =>
-  async (dispatch) => {
-    criteria = { ...criteria, pageNum };
-    try {
-      dispatch(slice.actions.setLoadingGet({ loading: true }));
-      const assets = await api.post<Page<AssetDTO>>(
-        `${basePath}/search`,
-        criteria
-      );
-      dispatch(slice.actions.getMoreAssets({ assets }));
-    } finally {
-      dispatch(slice.actions.setLoadingGet({ loading: false }));
-    }
-  };
+    async (dispatch) => {
+      criteria = { ...criteria, pageNum };
+      try {
+        dispatch(slice.actions.setLoadingGet({ loading: true }));
+        const assets = await api.post<Page<AssetDTO>>(
+          `${basePath}/search`,
+          criteria
+        );
+        dispatch(slice.actions.getMoreAssets({ assets }));
+      } finally {
+        dispatch(slice.actions.setLoadingGet({ loading: false }));
+      }
+    };
 export const getAssetsMini =
   (locationId?: number | null): AppThunk =>
-  async (dispatch) => {
-    dispatch(slice.actions.setLoadingGet({ loading: true }));
-    const assets = await api.get<AssetMiniDTO[]>(
-      `${basePath}/mini?locationId=${locationId ?? ''}`
-    );
-    dispatch(slice.actions.getAssetsMini({ assets }));
-    dispatch(slice.actions.setLoadingGet({ loading: false }));
-  };
+    async (dispatch) => {
+      dispatch(slice.actions.setLoadingGet({ loading: true }));
+      const assets = await api.get<AssetMiniDTO[]>(
+        `${basePath}/mini?locationId=${locationId ?? ''}`
+      );
+      dispatch(slice.actions.getAssetsMini({ assets }));
+      dispatch(slice.actions.setLoadingGet({ loading: false }));
+    };
 export const addAsset =
   (asset): AppThunk =>
-  async (dispatch) => {
-    const assetResponse = await api.post<AssetDTO>(basePath, asset);
-    dispatch(slice.actions.addAsset({ asset: assetResponse }));
-  };
+    async (dispatch) => {
+      const assetResponse = await api.post<AssetDTO>(basePath, asset);
+      dispatch(slice.actions.addAsset({ asset: assetResponse }));
+    };
 export const editAsset =
   (id: number, asset: Partial<AssetDTO>): AppThunk =>
-  async (dispatch) => {
-    const assetResponse = await api.patch<AssetDTO>(`${basePath}/${id}`, asset);
-    dispatch(slice.actions.editAsset({ asset: assetResponse }));
-  };
+    async (dispatch) => {
+      const assetResponse = await api.patch<AssetDTO>(`${basePath}/${id}`, asset);
+      dispatch(slice.actions.editAsset({ asset: assetResponse }));
+    };
 export const getSingleAsset =
   (id: number): AppThunk =>
-  async (dispatch) => {
-    const assetResponse = await api.get<AssetDTO>(`${basePath}/${id}`);
-    dispatch(slice.actions.editAsset({ asset: assetResponse }));
-  };
+    async (dispatch) => {
+      const assetResponse = await api.get<AssetDTO>(`${basePath}/${id}`);
+      dispatch(slice.actions.editAsset({ asset: assetResponse }));
+    };
 export const deleteAsset =
   (id: number): AppThunk =>
-  async (dispatch) => {
-    const assetResponse = await api.deletes<{ success: boolean }>(
-      `${basePath}/${id}`
-    );
-    const { success } = assetResponse;
-    if (success) {
-      dispatch(slice.actions.deleteAsset({ id }));
-    }
-  };
+    async (dispatch) => {
+      const assetResponse = await api.deletes<{ success: boolean }>(
+        `${basePath}/${id}`
+      );
+      const { success } = assetResponse;
+      if (success) {
+        dispatch(slice.actions.deleteAsset({ id }));
+      }
+    };
 
 export const getAssetChildren =
-  (id: number, parents: number[]): AppThunk =>
-  async (dispatch) => {
-    dispatch(slice.actions.setLoadingGet({ loading: true }));
-    const assets = await api.get<AssetDTO[]>(`${basePath}/children/${id}`);
-    dispatch(
-      slice.actions.getAssetChildren({
-        id,
-        assets: assets.map((asset) => {
-          return { ...asset, hierarchy: [...parents, asset.id] };
+  (id: number, parents: number[], locationId?: number): AppThunk =>
+    async (dispatch) => {
+      dispatch(slice.actions.setLoadingGet({ loading: true }));
+      const assets = await api.get<AssetDTO[]>(
+        `${basePath}/children/${id}${locationId !== undefined ? `?locationId=${locationId}` : ''
+        }`
+      );
+      dispatch(
+        slice.actions.getAssetChildren({
+          id,
+          assets: assets.map((asset) => {
+            return { ...asset, hierarchy: [...parents, asset.id] };
+          })
         })
-      })
-    );
-    dispatch(slice.actions.setLoadingGet({ loading: false }));
-  };
+      );
+      dispatch(slice.actions.setLoadingGet({ loading: false }));
+    };
 
 export const getAssetDetails =
   (id: number): AppThunk =>
-  async (dispatch) => {
-    dispatch(slice.actions.setLoadingGet({ loading: true }));
-    const asset = await api.get<AssetDTO>(`${basePath}/${id}`);
-    dispatch(
-      slice.actions.getAssetDetails({
-        id,
-        asset
-      })
-    );
-    dispatch(slice.actions.setLoadingGet({ loading: false }));
-  };
+    async (dispatch) => {
+      dispatch(slice.actions.setLoadingGet({ loading: true }));
+      const asset = await api.get<AssetDTO>(`${basePath}/${id}`);
+      dispatch(
+        slice.actions.getAssetDetails({
+          id,
+          asset
+        })
+      );
+      dispatch(slice.actions.setLoadingGet({ loading: false }));
+    };
 export const getAssetByNfc =
   (nfcId: string): AppThunk =>
-  async (dispatch) => {
-    dispatch(slice.actions.setLoadingGet({ loading: true }));
-    const asset = await api.get<AssetDTO>(`${basePath}/nfc?nfcId=${nfcId}`);
-    dispatch(slice.actions.setLoadingGet({ loading: false }));
-    return asset.id;
-  };
+    async (dispatch) => {
+      dispatch(slice.actions.setLoadingGet({ loading: true }));
+      const asset = await api.get<AssetDTO>(`${basePath}/nfc?nfcId=${nfcId}`);
+      dispatch(slice.actions.setLoadingGet({ loading: false }));
+      return asset.id;
+    };
 export const getAssetByBarcode =
   (barCode: string): AppThunk =>
-  async (dispatch) => {
-    dispatch(slice.actions.setLoadingGet({ loading: true }));
-    const asset = await api.get<AssetDTO>(
-      `${basePath}/barcode?data=${barCode}`
-    );
-    dispatch(slice.actions.setLoadingGet({ loading: false }));
-    return asset.id;
-  };
+    async (dispatch) => {
+      dispatch(slice.actions.setLoadingGet({ loading: true }));
+      const asset = await api.get<AssetDTO>(
+        `${basePath}/barcode?data=${barCode}`
+      );
+      dispatch(slice.actions.setLoadingGet({ loading: false }));
+      return asset.id;
+    };
 export const getAssetWorkOrders =
   (id: number): AppThunk =>
-  async (dispatch) => {
-    dispatch(slice.actions.setLoadingWorkOrders({ loading: true }));
-    const workOrders = await api.get<WorkOrder[]>(`work-orders/asset/${id}`);
-    dispatch(
-      slice.actions.getAssetWorkOrders({
-        id,
-        workOrders
-      })
-    );
-    dispatch(slice.actions.setLoadingWorkOrders({ loading: false }));
-  };
+    async (dispatch) => {
+      dispatch(slice.actions.setLoadingWorkOrders({ loading: true }));
+      const workOrders = await api.get<WorkOrder[]>(`work-orders/asset/${id}`);
+      dispatch(
+        slice.actions.getAssetWorkOrders({
+          id,
+          workOrders
+        })
+      );
+      dispatch(slice.actions.setLoadingWorkOrders({ loading: false }));
+    };
 
 export const getAssetsByLocation =
   (id: number): AppThunk =>
-  async (dispatch) => {
-    const assets = await api.get<AssetDTO[]>(`${basePath}/location/${id}`);
-    dispatch(
-      slice.actions.getAssetsByLocation({
-        id,
-        assets
-      })
-    );
-  };
+    async (dispatch) => {
+      const assets = await api.get<AssetDTO[]>(`${basePath}/location/${id}`);
+      dispatch(
+        slice.actions.getAssetsByLocation({
+          id,
+          assets
+        })
+      );
+    };
 
 export const getAssetsByPart =
   (id: number): AppThunk =>
-  async (dispatch) => {
-    const assets = await api.get<AssetDTO[]>(`${basePath}/part/${id}`);
-    dispatch(
-      slice.actions.getAssetsByPart({
-        id,
-        assets
-      })
-    );
-  };
+    async (dispatch) => {
+      const assets = await api.get<AssetDTO[]>(`${basePath}/part/${id}`);
+      dispatch(
+        slice.actions.getAssetsByPart({
+          id,
+          assets
+        })
+      );
+    };
 export default slice;

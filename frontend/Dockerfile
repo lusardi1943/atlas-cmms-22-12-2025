@@ -1,10 +1,17 @@
-FROM node:21.6.1 AS build
+FROM node:22-alpine AS build
 
 WORKDIR /usr/src/app
 COPY package*.json ./
-RUN npm config set fetch-retry-maxtimeout 6000000
-RUN npm config set fetch-retry-mintimeout 1000000
-RUN NODE_OPTIONS="--max_old_space_size=4096" npm install --legacy-peer-deps
+
+# Configuración de red robusta para npm para evitar errores ECONNRESET durante el build.
+# Impacto: Aumenta la resiliencia en la descarga de paquetes al incrementar reintentos y tiempos de espera.
+RUN npm config set fetch-retry-maxtimeout 6000000 && \
+    npm config set fetch-retry-mintimeout 1000000 && \
+    npm config set fetch-retries 10 && \
+    npm config set fetch-retry-factor 10 && \
+    npm config set progress false && \
+    NODE_OPTIONS="--max_old_space_size=4096" npm install --legacy-peer-deps
+
 COPY . .
 RUN npm run build
 

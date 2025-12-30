@@ -203,4 +203,8 @@ if (rnVersion < versionToNumber(0, 75, 0)) {
     applyNativeModulesAppBuildGradle(project)
 }
 
-apply plugin: 'com.google.gms.google-services'
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+} else {
+    println "WARNING: google-services.json not found, skipping com.google.gms.google-services plugin"
+}

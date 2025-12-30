@@ -10,7 +10,12 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import useAuth from '../../hooks/useAuth';
 import { PermissionEntity } from '../../models/role';
-import { getAssetChildren, getAssets, getMoreAssets } from '../../slices/asset';
+import {
+  assetActions,
+  getAssetChildren,
+  getAssets,
+  getMoreAssets
+} from '../../slices/asset';
 import { FilterField, SearchCriteria } from '../../models/page';
 import { Button, Card, Searchbar, Text, useTheme } from 'react-native-paper';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +25,11 @@ import {
   assetStatuses,
   getAssetStatusConfig
 } from '../../models/asset';
-import { isCloseToBottom, onSearchQueryChange } from '../../utils/overall';
+import {
+  getNewCriteriaOnSearch,
+  isCloseToBottom,
+  onSearchQueryChange
+} from '../../utils/overall';
 import { RootStackScreenProps } from '../../types';
 import Tag from '../../components/Tag';
 import { useDebouncedEffect } from '../../hooks/useDebouncedEffect';
@@ -80,8 +89,8 @@ const AssetCard = ({
             source={
               asset.image
                 ? {
-                    uri: asset.image.url
-                  }
+                  uri: asset.image.url
+                }
                 : require('../../assets/images/no-image.png')
             }
           />
@@ -119,20 +128,27 @@ export default function AssetsScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const { hasViewPermission } = useAuth();
   const defaultFilterFields: FilterField[] = [];
+  if (route.params?.locationId) {
+    defaultFilterFields.push({
+      field: 'location.id',
+      operation: 'eq',
+      value: route.params.locationId.toString()
+    });
+  }
   const getCriteriaFromFilterFields = (filterFields: FilterField[]) => {
     const initialCriteria: SearchCriteria = {
       filterFields: defaultFilterFields,
       pageSize: 10,
       pageNum: 0,
-      direction: 'DESC'
+      sortField: 'location.name',
+      direction: 'ASC'
     };
     let newFilterFields = [...initialCriteria.filterFields];
-    filterFields.forEach(
-      (filterField) =>
-        (newFilterFields = newFilterFields.filter(
-          (ff) => ff.field != filterField.field
-        ))
-    );
+    filterFields.forEach((filterField) => {
+      newFilterFields = newFilterFields.filter(
+        (ff) => ff.field !== filterField.field
+      );
+    });
     return {
       ...initialCriteria,
       filterFields: [...newFilterFields, ...filterFields]
@@ -142,42 +158,87 @@ export default function AssetsScreen({
     getCriteriaFromFilterFields([])
   );
   useEffect(() => {
+    // Limpiar caché de búsqueda al entrar en la pantalla para asegurar un estado fresco.
+    dispatch(assetActions.clearAssets());
+  }, []);
+
+  useEffect(() => {
     if (hasViewPermission(PermissionEntity.ASSETS) && view === 'list') {
+      // Ordenación por defecto A-Z por nombre de ubicación para Activos en Mobile.
+      // Impacto: Facilita al técnico ver los equipos agrupados por su sitio físico.
       dispatch(
-        getAssets({ ...criteria, pageSize: 10, pageNum: 0, direction: 'DESC' })
+        getAssets({
+          ...criteria,
+          pageSize: 10,
+          pageNum: 0,
+          sortField: 'location.name',
+          direction: 'ASC'
+        })
       );
     }
-  }, [criteria]);
+    // Se añade 'view' como dependencia para asegurar que la búsqueda se dispare al cambiar de jerarquía a lista.
+  }, [criteria, view]);
   const [currentAssets, setCurrentAssets] = useState<AssetRow[]>([]);
+  const [currentLocationId, setCurrentLocationId] = useState<number | undefined>(
+    route.params?.locationId
+  );
+
   useEffect(() => {
-    if (
-      route.params?.id &&
-      assetsHierarchy.some(
-        (asset) =>
-          asset.hierarchy.includes(route.params.id) &&
-          asset.id !== route.params.id
-      )
-    ) {
+    // Lógica de navegación contextual:
+    // 1. Si entramos al nivel raíz (id=0), limpiamos la jerarquía para asegurar datos frescos.
+    // 2. Si entramos a un nodo hijo, solo descargamos si no ha sido cargado ya.
+    // 3. Pasamos locationId a la API para activar el filtrado por sitio en el servidor.
+    const id = route.params?.id ?? 0;
+    const locationId = route.params?.locationId;
+    const hierarchy = route.params?.hierarchy ?? [];
+
+    if (id === 0) {
+      dispatch(assetActions.clearAssetsHierarchy());
+    }
+
+    setCurrentLocationId(locationId);
+
+    if (id !== 0 && assetsHierarchy.some(asset => asset.hierarchy.includes(id) && asset.id !== id)) {
       return;
     }
-    dispatch(
-      getAssetChildren(route.params?.id ?? 0, route.params?.hierarchy ?? [])
-    );
-  }, [route]);
+
+    dispatch(getAssetChildren(id, hierarchy, locationId));
+  }, [route.params?.id, route.params?.locationId]);
+
+  useEffect(() => {
+    if (route.params?.locationName) {
+      navigation.setOptions({
+        title: `${t('assets')} - ${route.params.locationName}`
+      });
+    }
+  }, [route.params?.locationName, t]);
 
   const onRefresh = () => {
     setCriteria(getCriteriaFromFilterFields([]));
   };
 
   const onQueryChange = (query) => {
-    onSearchQueryChange<AssetDTO>(
-      query,
-      criteria,
-      setCriteria,
-      setSearchQuery,
-      ['name', 'model', 'description', 'additionalInfos']
-    );
-    setView('list');
+    setSearchQuery(query);
+    if (query) {
+      // Se añade 'location.name' a los campos de búsqueda en móvil para permitir encontrar activos por sitio.
+      // Impacto: Consistencia con la versión web y mejor búsqueda contextual para el técnico de campo.
+      // Se usa actualización funcional para evitar problemas de stale closure con el debounce.
+      setCriteria((prevCriteria) =>
+        getNewCriteriaOnSearch(query, prevCriteria, [
+          'name',
+          'model',
+          'description',
+          'additionalInfos',
+          'location.name'
+        ])
+      );
+      setView('list');
+    } else {
+      // Si la búsqueda se limpia, volvemos a la vista de jerarquía y limpiamos la caché.
+      setView('hierarchy');
+      setCriteria(getCriteriaFromFilterFields([]));
+      dispatch(assetActions.clearAssets());
+    }
   };
   useDebouncedEffect(
     () => {
@@ -188,23 +249,33 @@ export default function AssetsScreen({
   );
 
   useEffect(() => {
+    // Filtrado de visualización:
+    // - En niveles inferiores (parentId presente), filtramos por el padre directo.
+    // - En el nivel raíz (id=0), mostramos todos los activos con longitud de jerarquía 1.
+    // El filtrado por ubicación se delega al servidor para mayor eficiencia.
+    const parentId = route.params?.id;
     let result = [];
-    if (route.params?.id) {
-      result = assetsHierarchy.filter((asset, index) => {
-        return (
-          asset.hierarchy[asset.hierarchy.length - 2] === route.params.id &&
-          asset.id !== route.params.id
-        );
-      });
-    } else
-      result = assetsHierarchy.filter((asset) => asset.hierarchy.length === 1);
+
+    if (parentId) {
+      result = assetsHierarchy.filter(asset =>
+        asset.hierarchy[asset.hierarchy.length - 2] === parentId && asset.id !== parentId
+      );
+    } else {
+      /**
+       * Para el nivel raíz, mostramos todos los activos que tienen nivel 1 en la jerarquía.
+       * Si estamos filtrando por ubicación, la API ya devolvió solo los correspondientes.
+       */
+      result = assetsHierarchy.filter(asset => asset.hierarchy.length === 1);
+    }
     setCurrentAssets(result);
-  }, [assetsHierarchy]);
+  }, [assetsHierarchy, route.params?.id]);
 
   const handleViewChildren = (asset) => {
     navigation.push('Assets', {
       id: asset.id,
-      hierarchy: asset.hierarchy
+      hierarchy: asset.hierarchy,
+      locationId: route.params?.locationId,
+      locationName: route.params?.locationName
     });
   };
 
@@ -265,7 +336,11 @@ export default function AssetsScreen({
             />
           }
         >
-          {!!currentAssets.length &&
+          {loadingGet && !currentAssets.length ? (
+            <View style={{ padding: 20, alignItems: 'center' }}>
+              <Text>{t('loading')}...</Text>
+            </View>
+          ) : !!currentAssets.length ? (
             currentAssets.map((asset) => (
               <AssetCard
                 key={asset.id}
@@ -274,7 +349,20 @@ export default function AssetsScreen({
                 showChildrenButton={true}
                 onViewChildren={() => handleViewChildren(asset)}
               />
-            ))}
+            ))
+          ) : !loadingGet && (
+            <View
+              style={{
+                backgroundColor: 'white',
+                padding: 20,
+                borderRadius: 10
+              }}
+            >
+              <Text variant={'titleLarge'}>
+                {t('no_element_match_criteria')}
+              </Text>
+            </View>
+          )}
         </ScrollView>
       )}
     </View>

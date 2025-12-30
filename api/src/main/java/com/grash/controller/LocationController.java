@@ -75,7 +75,9 @@ public class LocationController {
         if (user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
             if (user.getRole().getViewPermissions().contains(PermissionEntity.LOCATIONS)) {
                 searchCriteria.filterCompany(user);
-                boolean canViewOthers = user.getRole().getViewOtherPermissions().contains(PermissionEntity.ASSETS);
+                // Corrección: Se verifica permiso de visibilidad de Localizaciones, no de Activos.
+                // Esto asegura que la búsqueda de sitios respete sus propios permisos.
+                boolean canViewOthers = user.getRole().getViewOtherPermissions().contains(PermissionEntity.LOCATIONS);
                 if (!canViewOthers) {
                     searchCriteria.filterCreatedBy(user);
                 }
@@ -115,8 +117,9 @@ public class LocationController {
             @ApiResponse(code = 403, message = "Access denied"),
     })
     public Collection<LocationMiniDTO> getMini(HttpServletRequest req) {
-        OwnUser location = userService.whoami(req);
-        return locationService.findByCompany(location.getCompany().getId()).stream().map(locationMapper::toMiniDto).collect(Collectors.toList());
+        OwnUser user = userService.whoami(req);
+        return locationService.findByCompany(user.getCompany().getId(), Sort.by(Sort.Direction.ASC, "name")).stream()
+                .map(location -> locationMapper.toMiniDto(location, locationService)).collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")

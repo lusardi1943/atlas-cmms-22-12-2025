@@ -2,6 +2,7 @@ package com.grash.service;
 
 import com.grash.advancedsearch.SearchCriteria;
 import com.grash.advancedsearch.SpecificationBuilder;
+import lombok.extern.slf4j.Slf4j;
 import com.grash.dto.SignupSuccessResponse;
 import com.grash.dto.SuccessResponse;
 import com.grash.dto.UserPatchDTO;
@@ -43,6 +44,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
@@ -83,18 +85,30 @@ public class UserService {
 
     public String signin(String email, String password, String type) {
         try {
+            log.info("Attempting signin for email: {} with type: {}", email, type);
             Authentication authentication =
                     authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+            log.info("Authentication successful for email: {}", email);
             if (authentication.getAuthorities().stream().noneMatch(grantedAuthority -> grantedAuthority.getAuthority().equals("ROLE_" + type.toUpperCase()))) {
+                log.warn("Role mismatch for user {}. Expected ROLE_{}, but found {}", email, type.toUpperCase(), authentication.getAuthorities());
                 throw new CustomException("Invalid credentials", HttpStatus.FORBIDDEN);
             }
             Optional<OwnUser> optionalUser = userRepository.findByEmailIgnoreCase(email);
+            if (!optionalUser.isPresent()) {
+                log.error("User not found in repository after successful authentication for email: {}", email);
+                throw new CustomException("Invalid credentials", HttpStatus.FORBIDDEN);
+            }
             OwnUser user = optionalUser.get();
+            log.info("User {} found, last login: {}", email, user.getLastLogin());
             user.setLastLogin(new Date());
             userRepository.save(user);
             return jwtTokenProvider.createToken(email, Collections.singletonList(user.getRole().getRoleType()));
         } catch (AuthenticationException e) {
+            log.warn("Authentication failed for email: {}. Error: {}", email, e.getMessage());
             throw new CustomException("Invalid credentials", HttpStatus.FORBIDDEN);
+        } catch (Exception e) {
+            log.error("Unexpected error during signin for email: {}", email, e);
+            throw e;
         }
     }
 
@@ -199,6 +213,44 @@ public class UserService {
 
     }
 
+    /**
+     * Creates a new user member directly under the creator's company.
+     * Use this method for administrators adding users manually, bypassing the invitation flow.
+     * This resolves the issue where "Index: 0, Size: 0" occurred when creating users without an existing invitation record.
+     *
+     * @param userReq The signup request details.
+     * @param creator The current admin user initiating the creation.
+     * @return The created OwnUser entity.
+     */
+    public OwnUser createMember(UserSignupRequest userReq, OwnUser creator) {
+        OwnUser user = userMapper.toModel(userReq);
+        user.setEmail(user.getEmail().toLowerCase());
+        if (userRepository.existsByEmailIgnoreCase(user.getEmail())) {
+            throw new CustomException("Email is already in use", HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        user.setUsername(utils.generateStringId());
+        
+        Optional<Role> optionalRole = roleService.findById(user.getRole().getId());
+        if (!optionalRole.isPresent())
+            throw new CustomException("Role not found", HttpStatus.NOT_ACCEPTABLE);
+            
+        Role role = optionalRole.get();
+        if (!role.belongsToCompany(creator.getCompany())) {
+             throw new CustomException("Role does not belong to your company", HttpStatus.FORBIDDEN);
+        }
+
+        user.setRole(role);
+        user.setCompany(creator.getCompany());
+        
+        user.setEnabled(true);
+        userRepository.save(user);
+        
+        // Optional: Send welcome email or notification if needed
+        
+        return user;
+    }
+
     public void delete(String username) {
         userRepository.deleteByUsername(username);
     }
@@ -244,7 +296,14 @@ public class UserService {
             if (companyUsersCount + 1 > user.getCompany().getSubscription().getUsersCount())
                 throw new CustomException("You can't add more users to this company", HttpStatus.NOT_ACCEPTABLE);
         }
+        // Habilita al usuario y limpia la fecha de desactivación temporal
         user.setEnabled(true);
+        user.setDeactivatedUntil(null);
+        // Si el usuario fue "eliminado" (soft-delete), el email contiene un sufijo " _ ID".
+        // Lo restauramos a su valor original para permitir el acceso.
+        if (user.getEmail().contains(" _ ")) {
+            user.setEmail(user.getEmail().split(" _ ")[0]);
+        }
         userRepository.save(user);
     }
 
@@ -316,6 +375,25 @@ public class UserService {
 
                 savedUser.setPassword(passwordEncoder.encode(userReq.getNewPassword()));
             }
+
+            // Email update logic
+            if (userReq.getEmail() != null && !userReq.getEmail().equalsIgnoreCase(savedUser.getEmail())) {
+                String newEmail = userReq.getEmail().toLowerCase();
+                if (userRepository.existsByEmailIgnoreCase(newEmail)) {
+                    throw new CustomException("Email is already in use", HttpStatus.UNPROCESSABLE_ENTITY);
+                }
+                savedUser.setEmail(newEmail);
+            }
+            
+            // Deactivation logic
+            if (userReq.getDeactivatedUntil() != null) {
+                savedUser.setDeactivatedUntil(userReq.getDeactivatedUntil());
+                savedUser.setEnabled(false);
+            } else if (Boolean.FALSE.equals(userReq.getEnabled())) {
+                savedUser.setEnabled(false);
+                savedUser.setDeactivatedUntil(null);
+            }
+
             OwnUser updatedUser = userRepository.saveAndFlush(userMapper.updateUser(savedUser, userReq));
             em.refresh(updatedUser);
             return updatedUser;

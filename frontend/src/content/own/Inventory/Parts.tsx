@@ -87,11 +87,14 @@ const Parts = ({ setAction }: PropsType) => {
   );
   const { parts, loadingGet, singlePart } = useSelector((state) => state.parts);
   const [openDrawerFromUrl, setOpenDrawerFromUrl] = useState<boolean>(false);
+  // Criterios de búsqueda iniciales con ordenación A-Z por defecto (name, ASC).
+  // Impacto: Presentación organizada de repuestos desde el primer acceso.
   const [criteria, setCriteria] = useState<SearchCriteria>({
     filterFields: [],
     pageSize: 10,
     pageNum: 0,
-    direction: 'DESC'
+    sortField: 'name',
+    direction: 'ASC'
   });
   const [openDelete, setOpenDelete] = useState<boolean>(false);
   const [openAddModal, setOpenAddModal] = useState<boolean>(false);
@@ -465,7 +468,7 @@ const Parts = ({ setAction }: PropsType) => {
             validation={Yup.object().shape(shape)}
             submitText={t('create_part')}
             values={{}}
-            onChange={({ field, e }) => {}}
+            onChange={({ field, e }) => { }}
             onSubmit={async (values) => {
               let formattedValues = formatValues(values);
               return new Promise<void>((resolve, rej) => {
@@ -594,7 +597,7 @@ const Parts = ({ setAction }: PropsType) => {
                 };
               })
             }}
-            onChange={({ field, e }) => {}}
+            onChange={({ field, e }) => { }}
             onSubmit={async (values) => {
               let formattedValues = formatValues(values);
               return new Promise<void>((resolve, rej) => {

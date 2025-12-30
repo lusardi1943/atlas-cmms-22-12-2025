@@ -144,7 +144,10 @@ export const CustomSelect = ({
     case 'location':
     case 'parentLocation':
       options = locationsMini
-        .filter((location) => location.id !== excluded)
+        .filter(
+          (location) =>
+            location.id !== excluded && (!field.leafOnly || !location.hasChildren)
+        )
         .map((location) => {
           return {
             label: location.name,
@@ -205,6 +208,7 @@ export const CustomSelect = ({
             open={locationModalOpen}
             onClose={() => setLocationModalOpen(false)}
             excludedLocationIds={[excluded]}
+            leafOnly={field.leafOnly}
             maxSelections={field.multiple ? 10 : 1}
             onSelect={(selectedLocations) => {
               handleChange(
@@ -212,15 +216,15 @@ export const CustomSelect = ({
                 field.name,
                 field.multiple
                   ? selectedLocations.map((location) => ({
-                      label: location.name,
-                      value: location.id
-                    }))
+                    label: location.name,
+                    value: location.id
+                  }))
                   : selectedLocations.length
-                  ? {
+                    ? {
                       label: selectedLocations[0].name,
                       value: selectedLocations[0].id
                     }
-                  : null
+                    : null
               );
               setLocationModalOpen(false); // Close the modal
             }}
@@ -228,8 +232,8 @@ export const CustomSelect = ({
               (field.multiple
                 ? fieldValue ?? []
                 : fieldValue
-                ? [fieldValue]
-                : []
+                  ? [fieldValue]
+                  : []
               ).some((a) => Number(a.value) === location.id)
             )}
           />
@@ -262,6 +266,9 @@ export const CustomSelect = ({
                 placeholder={field.placeholder}
                 error={!!formik.errors[field.name] || field.error}
                 helperText={formik.errors[field.name]}
+                // Cambio: Agregado onClick para abrir modal al hacer clic en el campo (no solo en la lupa).
+                // Impacto: Mejora UX permitiendo acceso directo al árbol jerárquico desde cualquier parte del campo.
+                onClick={() => setAssetModalOpen(true)}
                 InputProps={{
                   ...params.InputProps,
                   endAdornment: (
@@ -309,15 +316,15 @@ export const CustomSelect = ({
                 field.name,
                 field.multiple
                   ? selectedAssets.map((asset) => ({
-                      label: asset.name,
-                      value: asset.id
-                    }))
+                    label: asset.name,
+                    value: asset.id
+                  }))
                   : selectedAssets.length
-                  ? {
+                    ? {
                       label: selectedAssets[0].name,
                       value: selectedAssets[0].id
                     }
-                  : null
+                    : null
               );
               setAssetModalOpen(false); // Close the modal
             }}
@@ -325,8 +332,8 @@ export const CustomSelect = ({
               (field.multiple
                 ? fieldValue ?? []
                 : fieldValue
-                ? [fieldValue]
-                : []
+                  ? [fieldValue]
+                  : []
               ).some((a) => Number(a.value) === asset.id)
             )}
           />
@@ -366,17 +373,17 @@ export const CustomSelect = ({
           <Box display="flex" flexDirection="column">
             {fieldValue?.length
               ? fieldValue.map(({ label, value }) => (
-                  <Link
-                    sx={{ mb: 1 }}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    href={`/app/inventory/parts/${value}`}
-                    key={value}
-                    variant="h4"
-                  >
-                    {label}
-                  </Link>
-                ))
+                <Link
+                  sx={{ mb: 1 }}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  href={`/app/inventory/parts/${value}`}
+                  key={value}
+                  variant="h4"
+                >
+                  {label}
+                </Link>
+              ))
               : null}
           </Box>
           <SelectParts

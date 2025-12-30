@@ -25,7 +25,7 @@ import Meter, { MeterMiniDTO } from './models/meter';
 
 declare global {
   namespace ReactNavigation {
-    interface RootParamList extends RootStackParamList {}
+    interface RootParamList extends RootStackParamList { }
   }
 }
 
@@ -132,7 +132,12 @@ export type RootStackParamList = {
   Meters: undefined;
   Parts: undefined;
   Locations: { id?: number; hierarchy?: number[] };
-  Assets: { id?: number; hierarchy?: number[] };
+  Assets: {
+    id?: number;
+    hierarchy?: number[];
+    locationId?: number;
+    locationName?: string;
+  };
   PeopleTeams: undefined;
   VendorsCustomers: undefined;
   Notifications: undefined;

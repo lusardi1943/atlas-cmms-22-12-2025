@@ -78,6 +78,32 @@ public class UserController {
         } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
     }
 
+    /**
+     * Endpoint for manual user creation by administrators.
+     * Secured to ensure only users with PEOPLE_AND_TEAMS permissions can execute it.
+     * This provides a robust alternative to the public registration endpoint for internal user management.
+     */
+    @PostMapping("/create")
+    @PreAuthorize("hasRole('ROLE_CLIENT')")
+    @ApiResponses(value = {//
+            @ApiResponse(code = 500, message = "Something went wrong"), //
+            @ApiResponse(code = 403, message = "Access denied"), //
+            @ApiResponse(code = 404, message = "User not found")})
+    public UserResponseDTO create(@ApiParam("User") @Valid @RequestBody UserSignupRequest userReq,
+                                  @ApiIgnore @CurrentUser OwnUser requester) {
+        if (requester.getRole().getEditOtherPermissions().contains(PermissionEntity.PEOPLE_AND_TEAMS)) {
+            int usersCount =
+                    (int) userService.findByCompany(requester.getCompany().getId()).stream().filter(OwnUser::isEnabledInSubscriptionAndPaid).count();
+            if (usersCount <= requester.getCompany().getSubscription().getUsersCount()) {
+                return userMapper.toResponseDto(userService.createMember(userReq, requester));
+            } else
+                throw new CustomException("Company subscription users count doesn't allow this operation",
+                        HttpStatus.NOT_ACCEPTABLE);
+        } else {
+            throw new CustomException("You don't have permission", HttpStatus.NOT_ACCEPTABLE);
+        }
+    }
+
     @GetMapping("/mini")
     @PreAuthorize("hasRole('ROLE_CLIENT')")
     @ApiResponses(value = {//
@@ -129,6 +155,23 @@ public class UserController {
             throw new CustomException("Can't get someone else's user", HttpStatus.NOT_ACCEPTABLE);
         }
 
+    }
+
+    @PatchMapping("/{id}/enable")
+    @PreAuthorize("hasRole('ROLE_CLIENT')")
+    @ApiResponses(value = {//
+            @ApiResponse(code = 500, message = "Something went wrong"), //
+            @ApiResponse(code = 403, message = "Access denied"), //
+            @ApiResponse(code = 404, message = "User not found")})
+    public void enable(@ApiParam("id") @PathVariable("id") Long id,
+                       @ApiIgnore @CurrentUser OwnUser requester) {
+        Optional<OwnUser> optionalUser = userService.findByIdAndCompany(id, requester.getCompany().getId());
+
+        if (optionalUser.isPresent()) {
+            if (requester.getRole().getEditOtherPermissions().contains(PermissionEntity.PEOPLE_AND_TEAMS)) {
+                userService.enableUser(optionalUser.get().getEmail());
+            } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
+        } else throw new CustomException("User not found", HttpStatus.NOT_FOUND);
     }
 
     @GetMapping("/{id}")
