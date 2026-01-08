@@ -169,8 +169,16 @@ public class LocationService {
     public Page<LocationShowDTO> findBySearchCriteria(SearchCriteria searchCriteria) {
         SpecificationBuilder<Location> builder = new SpecificationBuilder<>();
         searchCriteria.getFilterFields().forEach(builder::with);
+
+        String sortField = searchCriteria.getSortField();
+        // Forzamos ordenación por nombre si no se especifica otra o si se usa el ID por defecto.
+        // Impacto: Garantiza una visualización organizada alfabéticamente en el listado de sitios.
+        if (sortField == null || sortField.equals("id")) {
+            sortField = "name";
+        }
+
         Pageable page = PageRequest.of(searchCriteria.getPageNum(), searchCriteria.getPageSize(),
-                searchCriteria.getDirection(), searchCriteria.getSortField());
+                searchCriteria.getDirection(), sortField);
         return locationRepository.findAll(builder.build(), page).map(location -> locationMapper.toShowDto(location,
                 this));
     }

@@ -124,7 +124,8 @@ function Locations() {
   const navigate = useNavigate();
   const [pageable, setPageable] = useState<Pageable>({
     page: 0,
-    size: 1000
+    size: 1000,
+    sort: ['name,asc']
   });
 
   const handleOpenMenu = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -180,6 +181,13 @@ function Locations() {
   };
   useEffect(() => {
     setTitle(t('locations'));
+    // Limpieza de caché de la tabla para forzar la nueva ordenación alfabética solicitada por el usuario.
+    // Impacto: Garantiza que el cambio sea visible inmediatamente sin intervención manual.
+    const migrationKey = 'location_sorting_migration_v1';
+    if (!localStorage.getItem(migrationKey)) {
+      localStorage.removeItem('locationDataGridState');
+      localStorage.setItem(migrationKey, 'true');
+    }
     if (hasViewPermission(PermissionEntity.LOCATIONS)) {
       dispatch(getLocations());
     }
@@ -394,21 +402,21 @@ function Locations() {
     },
     ...(apiKey
       ? ([
-          {
-            name: 'mapSwitch',
-            type: 'checkbox',
-            label: t('put_location_in_map'),
-            relatedFields: [
-              { field: 'mapTitle', value: false, hide: true },
-              { field: 'coordinates', value: false, hide: true }
-            ]
-          },
-          {
-            name: 'mapTitle',
-            type: 'titleGroupField',
-            label: t('map_coordinates')
-          }
-        ] as IField[])
+        {
+          name: 'mapSwitch',
+          type: 'checkbox',
+          label: t('put_location_in_map'),
+          relatedFields: [
+            { field: 'mapTitle', value: false, hide: true },
+            { field: 'coordinates', value: false, hide: true }
+          ]
+        },
+        {
+          name: 'mapTitle',
+          type: 'titleGroupField',
+          label: t('map_coordinates')
+        }
+      ] as IField[])
       : []),
     {
       name: 'image',
@@ -468,7 +476,7 @@ function Locations() {
             validation={Yup.object().shape(shape)}
             submitText={t('add')}
             values={{}}
-            onChange={({ field, e }) => {}}
+            onChange={({ field, e }) => { }}
             onSubmit={async (values) => {
               let formattedValues = formatValues(values);
               return new Promise<void>((resolve, rej) => {
@@ -525,12 +533,12 @@ function Locations() {
         style={
           (rowNode?.depth ?? 0) > 0
             ? {
-                backgroundColor:
-                  rowNode.depth % 2 === 0
-                    ? theme.colors.primary.light
-                    : theme.colors.primary.main,
-                color: 'white'
-              }
+              backgroundColor:
+                rowNode.depth % 2 === 0
+                  ? theme.colors.primary.light
+                  : theme.colors.primary.main,
+              color: 'white'
+            }
             : undefined
         }
       />
@@ -630,18 +638,18 @@ function Locations() {
               }),
               coordinates: currentLocation?.longitude
                 ? {
-                    lng: currentLocation.longitude,
-                    lat: currentLocation.latitude
-                  }
+                  lng: currentLocation.longitude,
+                  lat: currentLocation.latitude
+                }
                 : null,
               parentLocation: currentLocation?.parentLocation
                 ? {
-                    label: currentLocation.parentLocation.name,
-                    value: currentLocation.parentLocation.id
-                  }
+                  label: currentLocation.parentLocation.name,
+                  value: currentLocation.parentLocation.id
+                }
                 : null
             }}
-            onChange={({ field, e }) => {}}
+            onChange={({ field, e }) => { }}
             onSubmit={async (values) => {
               let formattedValues = formatValues(values);
               //differentiate files from api and formattedValues
@@ -785,7 +793,7 @@ function Locations() {
                       ...prevState,
                       sort: model.length
                         ? [`${mapper[model[0].field]},${model[0].sort}` as Sort]
-                        : []
+                        : ['name,asc']
                     }));
                   }}
                 />

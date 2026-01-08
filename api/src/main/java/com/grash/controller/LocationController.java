@@ -97,14 +97,21 @@ public class LocationController {
                                                        HttpServletRequest req) {
         //only sort is used
         OwnUser user = userService.whoami(req);
+
+        Sort sort = pageable.getSort();
+        // Si no se especifica ordenación, aplicamos el estándar A-Z por nombre.
+        if (sort.isUnsorted()) {
+            sort = Sort.by(Sort.Direction.ASC, "name");
+        }
+
         if (id.equals(0L) && user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
-            return locationService.findByCompany(user.getCompany().getId(), pageable.getSort()).stream().filter(location -> location.getParentLocation() == null).map(location -> locationMapper.toShowDto(location, locationService)).collect(Collectors.toList());
+            return locationService.findByCompany(user.getCompany().getId(), sort).stream().filter(location -> location.getParentLocation() == null).map(location -> locationMapper.toShowDto(location, locationService)).collect(Collectors.toList());
         }
         Optional<Location> optionalLocation = locationService.findById(id);
         if (optionalLocation.isPresent()) {
             Location savedLocation = optionalLocation.get();
             if (user.getRole().getViewPermissions().contains(PermissionEntity.LOCATIONS)) {
-                return locationService.findLocationChildren(id, pageable.getSort()).stream().map(location -> locationMapper.toShowDto(location, locationService)).collect(Collectors.toList());
+                return locationService.findLocationChildren(id, sort).stream().map(location -> locationMapper.toShowDto(location, locationService)).collect(Collectors.toList());
             } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
 
         } else throw new CustomException("Not found", HttpStatus.NOT_FOUND);
