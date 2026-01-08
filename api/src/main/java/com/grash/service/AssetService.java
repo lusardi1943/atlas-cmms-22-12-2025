@@ -228,8 +228,16 @@ public class AssetService {
     public Page<AssetShowDTO> findBySearchCriteria(SearchCriteria searchCriteria) {
         SpecificationBuilder<Asset> builder = new SpecificationBuilder<>();
         searchCriteria.getFilterFields().forEach(builder::with);
+
+        String sortField = searchCriteria.getSortField();
+        // Forzamos ordenación por ubicación si no se especifica otra o si se usa el ID por defecto.
+        // Impacto: Satisfacción del requerimiento de organización visual por sitio físico.
+        if (sortField == null || sortField.equals("id")) {
+            sortField = "location.name";
+        }
+
         Pageable page = PageRequest.of(searchCriteria.getPageNum(), searchCriteria.getPageSize(),
-                searchCriteria.getDirection(), searchCriteria.getSortField());
+                searchCriteria.getDirection(), sortField);
         return assetRepository.findAll(builder.build(), page).map(asset -> assetMapper.toShowDto(asset, this));
     }
 

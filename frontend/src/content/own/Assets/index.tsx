@@ -126,7 +126,8 @@ function Assets() {
   const [view, setView] = useState<ViewType>('hierarchy');
   const [pageable, setPageable] = useState<Pageable>({
     page: 0,
-    size: 1000
+    size: 1000,
+    sort: ['location.name,asc']
   });
   const initialCriteria: SearchCriteria = {
     filterFields: [
@@ -194,6 +195,13 @@ function Assets() {
   const [openFilterDrawer, setOpenFilterDrawer] = useState<boolean>(false);
   useEffect(() => {
     setTitle(t('assets'));
+    // Limpieza de caché de la tabla para forzar la nueva ordenación por ubicación solicitada por el usuario.
+    // Impacto: Garantiza que el cambio sea visible inmediatamente sin intervención manual del usuario.
+    const migrationKey = 'asset_sorting_migration_v1';
+    if (!localStorage.getItem(migrationKey)) {
+      localStorage.removeItem('assetDataGridState');
+      localStorage.setItem(migrationKey, 'true');
+    }
   }, []);
 
   useEffect(() => {
@@ -877,7 +885,7 @@ function Assets() {
                     ...prevState,
                     sort: model.length
                       ? [`${mappedField},${model[0].sort}` as Sort]
-                      : []
+                      : ['location.name,asc']
                   }));
                 }}
                 onPageSizeChange={onPageSizeChange}

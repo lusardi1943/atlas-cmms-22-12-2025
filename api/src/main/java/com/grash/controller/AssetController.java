@@ -167,18 +167,26 @@ public class AssetController {
                                               HttpServletRequest req) {
         OwnUser user = userService.whoami(req);
         log.info("getChildrenById: id={}, locationId={}, user={}", id, locationId, user.getEmail());
+
+        Sort sort = pageable.getSort();
+        // Si el cliente no envía una ordenación específica, aplicamos el estándar A-Z por ubicación.
+        if (sort.isUnsorted()) {
+            sort = Sort.by(Sort.Direction.ASC, "location.name");
+        }
+
         if (id.equals(0L)) {
             if (locationId != null) {
                 // Navegación contextual: obtenemos los activos que actúan como "raíz" dentro de este sitio específico.
                 // Impacto: Permite al usuario ver una jerarquía de activos filtrada por ubicación desde el primer nivel.
-                List<Asset> localRoots = assetService.findByCompanyAndLocationAndParentAssetIsNull(user.getCompany().getId(), locationId, 
-                        org.springframework.data.domain.PageRequest.of(0, 5000, pageable.getSort()));
-                
+                List<Asset> localRoots = assetService.findByCompanyAndLocationAndParentAssetIsNull(user.getCompany().getId(), locationId,
+                        org.springframework.data.domain.PageRequest.of(0, 5000, sort));
+
                 log.info("getChildrenById: Entregando {} activos raíz locales para la ubicación {}", localRoots.size(), locationId);
                 return localRoots.stream().map(asset -> assetMapper.toShowDto(asset, assetService)).collect(Collectors.toList());
             }
             if (user.getRole().getRoleType().equals(RoleType.ROLE_CLIENT)) {
-                return assetService.findByCompanyAndParentAssetNull(user.getCompany().getId(), pageable).stream().map(asset -> assetMapper.toShowDto(asset, assetService)).collect(Collectors.toList());
+                return assetService.findByCompanyAndParentAssetNull(user.getCompany().getId(),
+                        org.springframework.data.domain.PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort)).stream().map(asset -> assetMapper.toShowDto(asset, assetService)).collect(Collectors.toList());
             }
             // Si es Admin y no hay locationId, por defecto no mostramos nada para id=0 en este endpoint
             // (los Admins suelen ver activos en la lista paginada general, no en jerarquía raíz global).
@@ -188,7 +196,7 @@ public class AssetController {
         if (optionalAsset.isPresent()) {
             Asset savedAsset = optionalAsset.get();
             if (user.getRole().getViewPermissions().contains(PermissionEntity.ASSETS)) {
-                return assetService.findAssetChildren(id, pageable.getSort()).stream().map(asset -> assetMapper.toShowDto(asset,
+                return assetService.findAssetChildren(id, sort).stream().map(asset -> assetMapper.toShowDto(asset,
                         assetService)).collect(Collectors.toList());
             } else throw new CustomException("Access denied", HttpStatus.FORBIDDEN);
 
