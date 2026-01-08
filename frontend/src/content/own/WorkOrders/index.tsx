@@ -337,6 +337,11 @@ function WorkOrders() {
       label: t('image')
     },
     {
+      name: 'completedOn',
+      type: 'date',
+      label: t('completed_on')
+    },
+    {
       name: 'dueDate',
       type: 'date',
       label: t('due_date')
