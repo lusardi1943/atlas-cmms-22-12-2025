@@ -83,24 +83,19 @@ const AssetCard = ({
             />
           </View>
         </View>
-        <View style={{ ...styles.row, marginTop: 5 }}>
-          <Image
-            style={{ height: 70, width: 70, borderRadius: 35, marginRight: 10 }}
-            source={
-              asset.image
-                ? {
-                  uri: asset.image.url
-                }
-                : require('../../assets/images/no-image.png')
-            }
-          />
-          <Text variant="titleMedium">{asset.name}</Text>
+        <View style={{ marginTop: 10, marginBottom: 5 }}>
+          <Text variant="titleLarge" style={{ fontWeight: 'bold' }}>
+            {asset.name}
+          </Text>
         </View>
         <View style={{ marginBottom: 10 }}>
           {asset.location && (
             <IconWithLabel
               label={asset.location.name}
               icon="map-marker-outline"
+              labelVariant="titleMedium"
+              iconSize={24}
+              color={theme.colors.onSurfaceVariant}
             />
           )}
         </View>
