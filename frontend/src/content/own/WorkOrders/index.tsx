@@ -640,22 +640,6 @@ function WorkOrders() {
       width: 150,
       valueGetter: (params: GridValueGetterParams<string>) =>
         getFormattedDate(params.value)
-    },
-    {
-      field: 'updatedAt',
-      headerName: t('updated_at'),
-      description: t('updated_at'),
-      width: 150,
-      valueGetter: (params: GridValueGetterParams<string>) =>
-        getFormattedDate(params.value)
-    },
-    {
-      field: 'createdAt',
-      headerName: t('created_at'),
-      description: t('created_at'),
-      width: 150,
-      valueGetter: (params: GridValueGetterParams<string>) =>
-        getFormattedDate(params.value)
     }
   ];
   // dataGrid state
@@ -677,8 +661,6 @@ function WorkOrders() {
     daysSinceCreated: 'createdAt',
     files: 'files',
     completedOn: 'completedOn',
-    updatedAt: 'updatedAt',
-    createdAt: 'createdAt',
     dueDate: 'dueDate'
   };
 
