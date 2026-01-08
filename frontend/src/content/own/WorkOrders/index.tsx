@@ -102,7 +102,7 @@ import { PlanFeature } from '../../../models/owns/subscriptionPlan';
 import { getPreventiveMaintenanceUrl } from 'src/utils/urlPaths';
 import { useGridApiRef } from '@mui/x-data-grid-pro';
 import useGridStatePersist from '../../../hooks/useGridStatePersist';
-import Request from '../../../models/owns/request';
+import WorkOrderAddModal from '../components/WorkOrderAddModal';
 
 function WorkOrders() {
   const { t }: { t: any } = useTranslation();
@@ -315,6 +315,134 @@ function WorkOrders() {
     }
   }, [locationParamObject, assetParamObject]);
 
+  const defaultFields: Array<IField> = [
+    {
+      name: 'title',
+      type: 'text',
+      label: t('title'),
+      placeholder: t('wo.title_description'),
+      required: true
+    },
+    {
+      name: 'description',
+      type: 'text',
+      label: t('description'),
+      placeholder: t('description'),
+      multiple: true
+    },
+    {
+      name: 'image',
+      type: 'file',
+      fileType: 'image',
+      label: t('image')
+    },
+    {
+      name: 'dueDate',
+      type: 'date',
+      label: t('due_date')
+    },
+    {
+      name: 'estimatedStartDate',
+      type: 'date',
+      label: t('estimated_start_date')
+    },
+    {
+      name: 'estimatedDuration',
+      type: 'number',
+      label: t('estimated_duration'),
+      placeholder: t('hours')
+    },
+    {
+      name: 'priority',
+      type: 'select',
+      label: t('priority'),
+      type2: 'priority'
+    },
+    {
+      name: 'category',
+      type: 'select',
+      label: t('category'),
+      type2: 'category',
+      category: 'work-order-categories'
+    },
+    {
+      name: 'primaryUser',
+      type: 'select',
+      label: t('primary_worker'),
+      type2: 'user'
+    },
+    {
+      name: 'assignedTo',
+      type: 'select',
+      label: t('additional_workers'),
+      type2: 'user',
+      multiple: true
+    },
+    {
+      name: 'customers',
+      type: 'select',
+      label: t('customers'),
+      type2: 'customer',
+      multiple: true
+    },
+    {
+      name: 'team',
+      type: 'select',
+      type2: 'team',
+      label: t('team'),
+      placeholder: t('select_team')
+    },
+    {
+      name: 'location',
+      type: 'select',
+      type2: 'location',
+      label: t('location'),
+      placeholder: t('select_location'),
+      leafOnly: true
+    },
+    {
+      name: 'asset',
+      type: 'select',
+      type2: 'asset',
+      label: t('asset'),
+      placeholder: t('select_asset'),
+      relatedFields: [{ field: 'location' }]
+    },
+    {
+      name: 'assetStatus',
+      type: 'select',
+      label: t('asset_status'),
+      placeholder: t('select_asset_status'),
+      items: assetStatuses.map((assetStatus) => ({
+        label: t(assetStatus.status),
+        value: assetStatus.status
+      }))
+    },
+    {
+      name: 'tasks',
+      type: 'select',
+      type2: 'task',
+      label: t('tasks'),
+      placeholder: t('select_tasks')
+    },
+    {
+      name: 'files',
+      type: 'file',
+      multiple: true,
+      label: t('files'),
+      fileType: 'file'
+    },
+    {
+      name: 'requiredSignature',
+      type: 'switch',
+      label: t('requires_signature')
+    }
+  ];
+
+  const defaultShape: { [key: string]: any } = {
+    title: Yup.string().required(t('required_wo_title'))
+  };
+
   const formatValues = (values) => {
     const newValues = { ...values };
     newValues.assetStatus = newValues.assetStatus?.value ?? null;
@@ -331,20 +459,10 @@ function WorkOrders() {
     newValues.category = formatSelect(newValues.category);
     return newValues;
   };
-  const onCreationSuccess = () => {
-    setOpenAddModal(false);
-    showSnackBar(t('wo_create_success'), 'success');
+  const getFieldsAndShapes = (): [Array<IField>, { [key: string]: any }] => {
+    return getWOFieldsAndShapes(defaultFields, defaultShape);
   };
-  const onCreationFailure = (err) =>
-    showSnackBar(t('wo_create_failure'), 'error');
-  const onEditSuccess = () => {
-    setOpenUpdateModal(false);
-    showSnackBar(t('changes_saved_success'), 'success');
-  };
-  const onEditFailure = (err) => showSnackBar(t('wo_update_failure'), 'error');
-  const onDeleteSuccess = () => {
-    showSnackBar(t('wo_delete_success'), 'success');
-  };
+
   const onDeleteFailure = (err) =>
     showSnackBar(t('wo_delete_failure'), 'error');
 
@@ -552,211 +670,14 @@ function WorkOrders() {
     dueDate: 'dueDate'
   };
 
-  const defaultFields: Array<IField> = [
-    {
-      name: 'title',
-      type: 'text',
-      label: t('title'),
-      placeholder: t('wo.title_description'),
-      required: true
-    },
-    {
-      name: 'description',
-      type: 'text',
-      label: t('description'),
-      placeholder: t('description'),
-      multiple: true
-    },
-    {
-      name: 'image',
-      type: 'file',
-      fileType: 'image',
-      label: t('image')
-    },
-    {
-      name: 'dueDate',
-      type: 'date',
-      label: t('due_date')
-    },
-    {
-      name: 'estimatedStartDate',
-      type: 'date',
-      label: t('estimated_start_date')
-    },
-    {
-      name: 'estimatedDuration',
-      type: 'number',
-      label: t('estimated_duration'),
-      placeholder: t('hours')
-    },
-    {
-      name: 'priority',
-      type: 'select',
-      label: t('priority'),
-      type2: 'priority'
-    },
-    {
-      name: 'category',
-      type: 'select',
-      label: t('category'),
-      type2: 'category',
-      category: 'work-order-categories'
-    },
-    {
-      name: 'primaryUser',
-      type: 'select',
-      label: t('primary_worker'),
-      type2: 'user'
-    },
-    {
-      name: 'assignedTo',
-      type: 'select',
-      label: t('additional_workers'),
-      type2: 'user',
-      multiple: true
-    },
-    {
-      name: 'customers',
-      type: 'select',
-      label: t('customers'),
-      type2: 'customer',
-      multiple: true
-    },
-    {
-      name: 'team',
-      type: 'select',
-      type2: 'team',
-      label: t('team'),
-      placeholder: t('select_team')
-    },
-    {
-      name: 'location',
-      type: 'select',
-      type2: 'location',
-      label: t('location'),
-      placeholder: t('select_location'),
-      leafOnly: true
-    },
-    {
-      name: 'asset',
-      type: 'select',
-      type2: 'asset',
-      label: t('asset'),
-      placeholder: t('select_asset'),
-      relatedFields: [{ field: 'location' }]
-    },
-    {
-      name: 'assetStatus',
-      type: 'select',
-      label: t('asset_status'),
-      placeholder: t('select_asset_status'),
-      items: assetStatuses.map((assetStatus) => ({
-        label: t(assetStatus.status),
-        value: assetStatus.status
-      }))
-    },
-    {
-      name: 'tasks',
-      type: 'select',
-      type2: 'task',
-      label: t('tasks'),
-      placeholder: t('select_tasks')
-    },
-    {
-      name: 'files',
-      type: 'file',
-      multiple: true,
-      label: t('files'),
-      fileType: 'file'
-    },
-    {
-      name: 'requiredSignature',
-      type: 'switch',
-      label: t('requires_signature')
-    }
-  ];
-  const defaultShape: { [key: string]: any } = {
-    title: Yup.string().required(t('required_wo_title'))
+  const onEditSuccess = () => {
+    setOpenUpdateModal(false);
+    showSnackBar(t('changes_saved_success'), 'success');
   };
-  const getFieldsAndShapes = (): [Array<IField>, { [key: string]: any }] => {
-    return getWOFieldsAndShapes(defaultFields, defaultShape);
+  const onEditFailure = (err) => showSnackBar(t('wo_update_failure'), 'error');
+  const onDeleteSuccess = () => {
+    showSnackBar(t('wo_delete_success'), 'success');
   };
-  const renderWorkOrderAddModal = () => (
-    <Dialog
-      fullWidth
-      maxWidth="md"
-      open={openAddModal}
-      onClose={() => setOpenAddModal(false)}
-    >
-      <DialogTitle
-        sx={{
-          p: 3
-        }}
-      >
-        <Typography variant="h4" gutterBottom>
-          {t('add_wo')}
-        </Typography>
-        <Typography variant="subtitle2">{t('add_wo_description')}</Typography>
-      </DialogTitle>
-      <DialogContent
-        dividers
-        sx={{
-          p: 3
-        }}
-      >
-        <Box>
-          <Form
-            fields={getFieldsAndShapes()[0]}
-            validation={Yup.object().shape(getFieldsAndShapes()[1])}
-            submitText={t('add')}
-            values={{
-              requiredSignature: false,
-              dueDate: initialDueDate,
-              asset: assetParamObject
-                ? { label: assetParamObject.name, value: assetParamObject.id }
-                : null,
-              location: locationParamObject
-                ? {
-                  label: locationParamObject.name,
-                  value: locationParamObject.id
-                }
-                : null
-            }}
-            onChange={({ field, e }) => { }}
-            onSubmit={async (values) => {
-              if (workOrders.totalElements === 0)
-                fireGa4Event('first_wo_creation');
-              let formattedValues = formatValues(values);
-              return new Promise<void>((resolve, rej) => {
-                uploadFiles(formattedValues.files, formattedValues.image)
-                  .then((files) => {
-                    const imageAndFiles = getImageAndFiles(files);
-                    formattedValues = {
-                      ...formattedValues,
-                      image: imageAndFiles.image,
-                      files: imageAndFiles.files
-                    };
-                    dispatch(addWorkOrder(formattedValues))
-                      .then(() => {
-                        onCreationSuccess();
-                        resolve();
-                      })
-                      .catch((err) => {
-                        onCreationFailure(err);
-                        rej();
-                      });
-                  })
-                  .catch((err) => {
-                    onCreationFailure(err);
-                    rej();
-                  });
-              });
-            }}
-          />
-        </Box>
-      </DialogContent>
-    </Dialog>
-  );
   const renderWorkOrderUpdateModal = () => (
     <Dialog
       fullWidth
@@ -1053,7 +974,22 @@ function WorkOrders() {
           </Box>
         </Card>
       </Box>
-      {renderWorkOrderAddModal()}
+      <WorkOrderAddModal
+        open={openAddModal}
+        onClose={() => setOpenAddModal(false)}
+        initialValues={{
+          dueDate: initialDueDate,
+          asset: assetParamObject
+            ? { label: assetParamObject.name, value: assetParamObject.id }
+            : null,
+          location: locationParamObject
+            ? {
+              label: locationParamObject.name,
+              value: locationParamObject.id
+            }
+            : null
+        }}
+      />
       {renderWorkOrderUpdateModal()}
       <Drawer
         anchor="right"

@@ -97,10 +97,13 @@ interface SettingsLayoutProps {
   title: string;
   tabIndex: number;
   action?: () => void;
+  extraAction?: () => void;
   secondAction?: () => void;
   actionTitle?: string;
+  extraActionTitle?: string;
   secondActionTitle?: string;
   secondActionIcon?: ReactNode;
+  extraActionIcon?: ReactNode;
   editAction?: boolean;
   withoutCard?: boolean;
 }
@@ -114,6 +117,9 @@ function MultipleTabsLayout(props: SettingsLayoutProps) {
     basePath,
     action,
     actionTitle,
+    extraAction,
+    extraActionTitle,
+    extraActionIcon,
     withoutCard,
     editAction,
     secondAction,
@@ -149,6 +155,15 @@ function MultipleTabsLayout(props: SettingsLayoutProps) {
           </Tabs>
         </TabsContainerWrapper>
         <Stack direction="row" spacing={1} sx={{ mr: 4, my: 1 }}>
+          {extraAction && (
+            <Button
+              startIcon={extraActionIcon ?? <AddTwoToneIcon />}
+              variant="contained"
+              onClick={extraAction}
+            >
+              {extraActionTitle}
+            </Button>
+          )}
           {action && (
             <Button
               startIcon={editAction ? <EditTwoToneIcon /> : <AddTwoToneIcon />}

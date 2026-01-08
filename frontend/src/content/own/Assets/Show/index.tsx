@@ -24,9 +24,14 @@ import {
   editAsset,
   getAssetDetails
 } from '../../../../slices/asset';
+import { addWorkOrder } from '../../../../slices/workOrder';
 import { useDispatch, useSelector } from '../../../../store';
 import { CustomSnackBarContext } from '../../../../contexts/CustomSnackBarContext';
-import { formatAssetValues } from '../../../../utils/formatters';
+import {
+  formatAssetValues,
+  formatSelect,
+  formatSelectMultiple
+} from '../../../../utils/formatters';
 import { CompanySettingsContext } from '../../../../contexts/CompanySettingsContext';
 import { PermissionEntity } from '../../../../models/owns/role';
 import PermissionErrorMessage from '../../components/PermissionErrorMessage';
@@ -37,15 +42,21 @@ import AssetMeters from './AssetMeters';
 import { getImageAndFiles } from '../../../../utils/overall';
 import AssetDowntimes from './AssetDowntimes';
 import AssetAnalytics from './AssetAnalytics';
+import { fireGa4Event } from '../../../../utils/overall';
+import WorkOrderAddModal from '../../components/WorkOrderAddModal';
 
-interface PropsType {}
+interface PropsType { }
 
-const ShowAsset = ({}: PropsType) => {
+const ShowAsset = ({ }: PropsType) => {
   const { t }: { t: any } = useTranslation();
   const { assetId } = useParams();
   const [openUpdateModal, setOpenUpdateModal] = useState<boolean>(false);
+  const [openAddWorkOrderModal, setOpenAddWorkOrderModal] =
+    useState<boolean>(false);
   const { setTitle } = useContext(TitleContext);
-  const { uploadFiles } = useContext(CompanySettingsContext);
+  const { uploadFiles, getWOFieldsAndShapes } = useContext(
+    CompanySettingsContext
+  );
   const location = useLocation();
   const { showSnackBar } = useContext(CustomSnackBarContext);
   const { assetInfos, loadingGet } = useSelector((state) => state.assets);
@@ -55,6 +66,7 @@ const ShowAsset = ({}: PropsType) => {
   const {
     hasViewPermission,
     hasEditPermission,
+    hasCreatePermission,
     hasDeletePermission,
     getFilteredFields
   } = useAuth();
@@ -287,6 +299,7 @@ const ShowAsset = ({}: PropsType) => {
   const onEditFailure = (err) =>
     showSnackBar(t('asset_update_failure'), 'error');
 
+
   const renderAssetUpdateModal = () => (
     <Dialog
       fullWidth
@@ -321,21 +334,21 @@ const ShowAsset = ({}: PropsType) => {
               ...asset,
               location: asset?.location
                 ? {
-                    label: asset?.location.name,
-                    value: asset?.location.id
-                  }
+                  label: asset?.location.name,
+                  value: asset?.location.id
+                }
                 : null,
               category: asset?.category
                 ? {
-                    label: asset.category.name,
-                    value: asset.category.id
-                  }
+                  label: asset.category.name,
+                  value: asset.category.id
+                }
                 : null,
               primaryUser: asset?.primaryUser
                 ? {
-                    label: `${asset?.primaryUser.firstName} ${asset?.primaryUser.lastName}`,
-                    value: asset?.primaryUser.id
-                  }
+                  label: `${asset?.primaryUser.firstName} ${asset?.primaryUser.lastName}`,
+                  value: asset?.primaryUser.id
+                }
                 : null,
               assignedTo: asset?.assignedTo?.map((user) => {
                 return {
@@ -370,12 +383,12 @@ const ShowAsset = ({}: PropsType) => {
                 }) ?? [],
               parentAsset: asset?.parentAsset
                 ? {
-                    label: asset.parentAsset.name,
-                    value: asset.parentAsset.id
-                  }
+                  label: asset.parentAsset.name,
+                  value: asset.parentAsset.id
+                }
                 : null
             }}
-            onChange={({ field, e }) => {}}
+            onChange={({ field, e }) => { }}
             onSubmit={async (values) => {
               let formattedValues = formatAssetValues(values);
               const files = formattedValues.files.find((file) => file.id)
@@ -419,6 +432,12 @@ const ShowAsset = ({}: PropsType) => {
             : null
         }
         actionTitle={t('edit')}
+        extraAction={
+          tabIndex === 1 && hasCreatePermission(PermissionEntity.WORK_ORDERS)
+            ? () => setOpenAddWorkOrderModal(true)
+            : null
+        }
+        extraActionTitle={t('work_order')}
         secondAction={() => {
           setOpenDelete(true);
         }}
@@ -458,6 +477,19 @@ const ShowAsset = ({}: PropsType) => {
           question={t('confirm_delete_asset')}
         />
         {renderAssetUpdateModal()}
+        <WorkOrderAddModal
+          open={openAddWorkOrderModal}
+          onClose={() => setOpenAddWorkOrderModal(false)}
+          initialValues={{
+            asset: asset ? { label: asset.name, value: asset.id } : null,
+            location: asset?.location
+              ? {
+                label: asset.location.name,
+                value: asset.location.id
+              }
+              : null
+          }}
+        />
       </MultipleTabsLayout>
     );
   else return <PermissionErrorMessage message={'no_access_assets'} />;
