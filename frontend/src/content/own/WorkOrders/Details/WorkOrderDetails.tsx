@@ -436,51 +436,47 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
     type?: 'location' | 'asset' | 'team';
     id?: number;
   }[] => [
-    {
-      label: t('id'),
-      value: workOrder.customId
-    },
-    {
-      label: t('due_date'),
-      value: getFormattedDate(workOrder.dueDate)
-    },
-    {
-      label: t('estimated_start_date'),
-      value: getFormattedDate(workOrder.estimatedStartDate)
-    },
-    {
-      label: t('estimated_duration'),
-      value: !!workOrder.estimatedDuration
-        ? t('estimated_hours_in_text', { hours: workOrder.estimatedDuration })
-        : null
-    },
-    {
-      label: t('category'),
-      value: workOrder.category?.name
-    },
-    {
-      label: t('location'),
-      value: workOrder.location?.name,
-      type: 'location',
-      id: workOrder.location?.id
-    },
-    {
-      label: t('asset'),
-      value: workOrder.asset?.name,
-      type: 'asset',
-      id: workOrder.asset?.id
-    },
-    {
-      label: t('team'),
-      value: workOrder.team?.name,
-      type: 'team',
-      id: workOrder.team?.id
-    },
-    {
-      label: t('created_at'),
-      value: getFormattedDate(workOrder.createdAt)
-    }
-  ];
+      {
+        label: t('id'),
+        value: workOrder.customId
+      },
+      {
+        label: t('due_date'),
+        value: getFormattedDate(workOrder.dueDate)
+      },
+      {
+        label: t('estimated_start_date'),
+        value: getFormattedDate(workOrder.estimatedStartDate)
+      },
+      {
+        label: t('estimated_duration'),
+        value: !!workOrder.estimatedDuration
+          ? t('estimated_hours_in_text', { hours: workOrder.estimatedDuration })
+          : null
+      },
+      {
+        label: t('category'),
+        value: workOrder.category?.name
+      },
+      {
+        label: t('location'),
+        value: workOrder.location?.name,
+        type: 'location',
+        id: workOrder.location?.id
+      },
+      {
+        label: t('asset'),
+        value: workOrder.asset?.name,
+        type: 'asset',
+        id: workOrder.asset?.id
+      },
+      {
+        label: t('team'),
+        value: workOrder.team?.name,
+        type: 'team',
+        id: workOrder.team?.id
+      }
+    ];
   return (
     <Grid
       container
@@ -602,18 +598,18 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
                         workOrder.status === 'OPEN'
                           ? {}
                           : {
-                              backgroundColor:
-                                workOrder.status === 'IN_PROGRESS'
-                                  ? theme.colors.success.main
-                                  : workOrder.status === 'ON_HOLD'
+                            backgroundColor:
+                              workOrder.status === 'IN_PROGRESS'
+                                ? theme.colors.success.main
+                                : workOrder.status === 'ON_HOLD'
                                   ? theme.colors.warning.main
                                   : theme.colors.alpha.black[30],
-                              color: 'white',
-                              fontWeight: 'bold',
-                              '.MuiSvgIcon-root ': {
-                                fill: 'white !important'
-                              }
+                            color: 'white',
+                            fontWeight: 'bold',
+                            '.MuiSvgIcon-root ': {
+                              fill: 'white !important'
                             }
+                          }
                       }
                     >
                       {workOrderStatuses.map((workOrderStatus, index) => (
@@ -651,8 +647,8 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
                     {runningTimer
                       ? t('timer_running')
                       : t('run_timer') +
-                        ' - ' +
-                        durationToHours(primaryTime?.duration)}
+                      ' - ' +
+                      durationToHours(primaryTime?.duration)}
                   </Button>
                 </Box>
               </Grid>
@@ -955,18 +951,18 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
                               PermissionEntity.WORK_ORDERS,
                               workOrder
                             ) && (
-                              <IconButton
-                                sx={{ ml: 1 }}
-                                onClick={() =>
-                                  dispatch(deleteLabor(workOrder.id, labor.id))
-                                }
-                              >
-                                <DeleteTwoToneIcon
-                                  fontSize="small"
-                                  color="error"
-                                />
-                              </IconButton>
-                            )}
+                                <IconButton
+                                  sx={{ ml: 1 }}
+                                  onClick={() =>
+                                    dispatch(deleteLabor(workOrder.id, labor.id))
+                                  }
+                                >
+                                  <DeleteTwoToneIcon
+                                    fontSize="small"
+                                    color="error"
+                                  />
+                                </IconButton>
+                              )}
                           </Box>
                         }
                       >
@@ -985,11 +981,9 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
                               )}
                             </>
                           }
-                          secondary={`${
-                            getHoursAndMinutesAndSeconds(labor.duration)[0]
-                          }h ${
-                            getHoursAndMinutesAndSeconds(labor.duration)[1]
-                          }m`}
+                          secondary={`${getHoursAndMinutesAndSeconds(labor.duration)[0]
+                            }h ${getHoursAndMinutesAndSeconds(labor.duration)[1]
+                            }m`}
                         />
                       </ListItem>
                     ))}
@@ -1068,23 +1062,23 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
                                 PermissionEntity.WORK_ORDERS,
                                 workOrder
                               ) && (
-                                <IconButton
-                                  sx={{ ml: 1 }}
-                                  onClick={() =>
-                                    dispatch(
-                                      deleteAdditionalCost(
-                                        workOrder.id,
-                                        additionalCost.id
+                                  <IconButton
+                                    sx={{ ml: 1 }}
+                                    onClick={() =>
+                                      dispatch(
+                                        deleteAdditionalCost(
+                                          workOrder.id,
+                                          additionalCost.id
+                                        )
                                       )
-                                    )
-                                  }
-                                >
-                                  <DeleteTwoToneIcon
-                                    fontSize="small"
-                                    color="error"
-                                  />
-                                </IconButton>
-                              )}
+                                    }
+                                  >
+                                    <DeleteTwoToneIcon
+                                      fontSize="small"
+                                      color="error"
+                                    />
+                                  </IconButton>
+                                )}
                             </Box>
                           }
                         >
@@ -1162,22 +1156,22 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
                     PermissionEntity.WORK_ORDERS,
                     workOrder
                   ) && (
-                    <SelectParts
-                      selected={partQuantities.map(
-                        (partQuantity) => partQuantity.part.id
-                      )}
-                      onChange={(selectedParts) => {
-                        dispatch(
-                          editWOPartQuantities(
-                            workOrder.id,
-                            selectedParts.map((part) => part.id)
-                          )
-                        ).catch((error) =>
-                          showSnackBar(t('not_enough_part'), 'error')
-                        );
-                      }}
-                    />
-                  )}
+                      <SelectParts
+                        selected={partQuantities.map(
+                          (partQuantity) => partQuantity.part.id
+                        )}
+                        onChange={(selectedParts) => {
+                          dispatch(
+                            editWOPartQuantities(
+                              workOrder.id,
+                              selectedParts.map((part) => part.id)
+                            )
+                          ).catch((error) =>
+                            showSnackBar(t('not_enough_part'), 'error')
+                          );
+                        }}
+                      />
+                    )}
                 </Fragment>
               )}
             </Box>
@@ -1245,15 +1239,15 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
                                         sx={{
                                           background:
                                             relation.workOrder.status ===
-                                            'IN_PROGRESS'
+                                              'IN_PROGRESS'
                                               ? theme.colors.success.main
                                               : relation.workOrder.status ===
                                                 'ON_HOLD'
-                                              ? theme.colors.warning.main
-                                              : relation.workOrder.status ===
-                                                'COMPLETE'
-                                              ? theme.colors.primary.main
-                                              : theme.colors.alpha.black[30],
+                                                ? theme.colors.warning.main
+                                                : relation.workOrder.status ===
+                                                  'COMPLETE'
+                                                  ? theme.colors.primary.main
+                                                  : theme.colors.alpha.black[30],
                                           color: 'white'
                                         }}
                                       >
@@ -1275,14 +1269,14 @@ export default function WorkOrderDetails(props: WorkOrderDetailsProps) {
                     PermissionEntity.WORK_ORDERS,
                     workOrder
                   ) && (
-                    <Button
-                      onClick={() => setOpenLinkModal(true)}
-                      variant="outlined"
-                      sx={{ mt: 1 }}
-                    >
-                      {t('link_wo')}
-                    </Button>
-                  )}
+                      <Button
+                        onClick={() => setOpenLinkModal(true)}
+                        variant="outlined"
+                        sx={{ mt: 1 }}
+                      >
+                        {t('link_wo')}
+                      </Button>
+                    )}
                 </Fragment>
               )}
             </Box>
