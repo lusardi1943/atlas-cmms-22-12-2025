@@ -1451,6 +1451,7 @@ const locale = {
   reactivation_date: 'Reactivation Date',
   user_invite_email_already_selected: 'This email is already selected',
   user_invite_email_already_in_company: 'A user with this email is already in this company',
+  multiple_workers: '{{count}} workers',
   user_invite_email_invalid: 'This email is invalid',
   user_invite_email_max_reached: 'You can invite a maximum of 20 users at once',
   choose_country: 'Choose a country',

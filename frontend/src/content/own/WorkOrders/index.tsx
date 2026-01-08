@@ -544,7 +544,11 @@ function WorkOrders() {
       description: t('worker'),
       width: 170,
       renderCell: (params: GridRenderCellParams<UserMiniDTO>) =>
-        params.value ? <UserAvatars users={[params.value]} /> : null
+        params.value ? (
+          <Typography variant="body2">
+            {`${params.value.firstName} ${params.value.lastName}`}
+          </Typography>
+        ) : null
     },
     {
       field: 'assignedTo',
@@ -552,7 +556,15 @@ function WorkOrders() {
       description: t('assigned_to'),
       width: 170,
       renderCell: (params: GridRenderCellParams<UserMiniDTO[]>) => (
-        <UserAvatars users={params.value} />
+        <Box>
+          {params.value && params.value.length > 0 && (
+            <Typography variant="body2">
+              {params.value.length === 1
+                ? `${params.value[0].firstName} ${params.value[0].lastName}`
+                : t('multiple_workers', { count: params.value.length })}
+            </Typography>
+          )}
+        </Box>
       )
     },
     {

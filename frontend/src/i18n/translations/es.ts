@@ -1509,13 +1509,15 @@ const esJSON = {
   indefinite: 'Indefinido',
   until_a_date: 'Hasta una fecha',
   reactivation_date: 'Fecha de reactivación',
+  already_invited: 'Un usuario con este correo electrónico ya ha sido invitado',
   user_invite_email_already_selected: 'Este correo electrónico ya ha sido seleccionado',
   user_invite_email_already_in_company: 'Un usuario con este correo electrónico ya está en esta empresa',
   user_invite_email_invalid: 'Este correo electrónico no es válido',
   user_invite_email_max_reached: 'Puedes invitar a un máximo de 20 usuarios a la vez',
   choose_country: 'Elige un país',
   error_occurred: 'Ha ocurrido un error',
-  unknown_error_occurred: 'Ha ocurrido un error desconocido'
+  unknown_error_occurred: 'Ha ocurrido un error desconocido',
+  multiple_workers: '{{count}} trabajadores'
 };
 
 export default esJSON;
