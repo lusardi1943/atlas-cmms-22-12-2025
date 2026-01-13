@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { PersistGate } from 'redux-persist/integration/react';
 import useCachedResources from './hooks/useCachedResources';
 import useColorScheme from './hooks/useColorScheme';
@@ -131,7 +131,9 @@ export default function App() {
                 <PaperProvider theme={customTheme}>
                   <CustomSnackbarProvider>
                     <SheetProvider>
-                      <Navigation colorScheme={colorScheme} />
+                      <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+                        <Navigation colorScheme={colorScheme} />
+                      </SafeAreaView>
                       <StatusBar />
                       <FlashMessage
                         position="top"
