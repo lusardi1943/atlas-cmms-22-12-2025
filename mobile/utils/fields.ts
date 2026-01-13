@@ -29,6 +29,11 @@ export const getWorkOrderFields = (t): IField[] => {
       label: t('image')
     },
     {
+      name: 'completedOn',
+      type: 'date',
+      label: t('completed_on')
+    },
+    {
       name: 'dueDate',
       type: 'date',
       label: t('due_date')
@@ -221,12 +226,12 @@ export const getAssetFields = (t): Array<IField> => {
     },
     ...(!isIos
       ? [
-          {
-            name: 'nfcId',
-            type: 'nfc' as const,
-            label: t('nfc_tag')
-          }
-        ]
+        {
+          name: 'nfcId',
+          type: 'nfc' as const,
+          label: t('nfc_tag')
+        }
+      ]
       : []),
     {
       name: 'category',
