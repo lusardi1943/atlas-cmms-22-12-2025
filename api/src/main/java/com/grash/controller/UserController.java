@@ -147,7 +147,7 @@ public class UserController {
             OwnUser savedUser = optionalUser.get();
             if (requester.getId().equals(savedUser.getId()) ||
                     requester.getRole().getEditOtherPermissions().contains(PermissionEntity.PEOPLE_AND_TEAMS)) {
-                return userMapper.toResponseDto(userService.update(id, userReq));
+                return userMapper.toResponseDto(userService.update(id, userReq, requester));
             } else {
                 throw new CustomException("You don't have permission", HttpStatus.NOT_ACCEPTABLE);
             }

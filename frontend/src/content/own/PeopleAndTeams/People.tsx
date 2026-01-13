@@ -193,22 +193,24 @@ const People = ({ openModal, handleCloseModal }: PropsType) => {
       type2: 'role',
       label: t('role')
     },
-    ...(isEmailVerificationEnabled
-      ? []
-      : [
-        {
-          name: 'password',
-          type: 'text',
-          label: t('password_leave_empty_if_you_dont_want_to_change')
-        } as IField
-      ])
+    {
+      name: 'password',
+      type: 'text',
+      label: t('password_leave_empty_if_you_dont_want_to_change')
+    }
   ];
   const getFields = () => {
     let fields = [...defautfields];
+    const canEditOthers = user?.role?.editOtherPermissions?.includes(
+      PermissionEntity.PEOPLE_AND_TEAMS
+    );
+    // Hide 'role' for owners or self
     if (currentUser?.ownsCompany || currentUser?.id === user?.id) {
-      fields = fields.filter(
-        (field) => !['role', 'password'].includes(field.name)
-      );
+      fields = fields.filter((field) => field.name !== 'role');
+    }
+    // Hide password if NOT an admin
+    if (!canEditOthers) {
+      fields = fields.filter((field) => field.name !== 'password');
     }
     return fields;
   };

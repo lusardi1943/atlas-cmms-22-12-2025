@@ -11,6 +11,7 @@ import com.grash.event.CompanyCreatedEvent;
 import com.grash.exception.CustomException;
 import com.grash.mapper.UserMapper;
 import com.grash.model.*;
+import com.grash.model.enums.PermissionEntity;
 import com.grash.model.enums.RoleCode;
 import com.grash.repository.UserRepository;
 import com.grash.repository.VerificationTokenRepository;
@@ -364,13 +365,16 @@ public class UserService {
     }
 
     @org.springframework.transaction.annotation.Transactional
-    public OwnUser update(Long id, UserPatchDTO userReq) {
+    public OwnUser update(Long id, UserPatchDTO userReq, OwnUser requester) {
         if (userRepository.existsById(id)) {
             OwnUser savedUser = userRepository.findById(id).get();
             if (userReq.getNewPassword() != null) {
                 if (userReq.getNewPassword().length() < 8)
                     throw new CustomException("Password must be at least 8 characters", HttpStatus.NOT_ACCEPTABLE);
-                if (enableInvitationViaEmail)
+
+                boolean canEditOthers = requester.getRole().getEditOtherPermissions().contains(PermissionEntity.PEOPLE_AND_TEAMS);
+
+                if (enableInvitationViaEmail && !canEditOthers)
                     throw new CustomException("Please tell the user to reset his password", HttpStatus.NOT_FOUND);
 
                 savedUser.setPassword(passwordEncoder.encode(userReq.getNewPassword()));

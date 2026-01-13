@@ -163,33 +163,29 @@ export default function WODetailsScreen({
     label: string;
     value: string | number;
   }[] = [
-    {
-      label: t('description'),
-      value: workOrder?.description
-    },
-    {
-      label: t('due_date'),
-      value: getFormattedDate(workOrder?.dueDate)
-    },
-    {
-      label: t('estimated_start_date'),
-      value: getFormattedDate(workOrder?.estimatedStartDate)
-    },
-    {
-      label: t('estimated_duration'),
-      value: !!workOrder?.estimatedDuration
-        ? t('estimated_hours_in_text', { hours: workOrder?.estimatedDuration })
-        : null
-    },
-    {
-      label: t('category'),
-      value: workOrder?.category?.name
-    },
-    {
-      label: t('created_at'),
-      value: getFormattedDate(workOrder?.createdAt)
-    }
-  ];
+      {
+        label: t('description'),
+        value: workOrder?.description
+      },
+      {
+        label: t('due_date'),
+        value: getFormattedDate(workOrder?.dueDate)
+      },
+      {
+        label: t('estimated_start_date'),
+        value: getFormattedDate(workOrder?.estimatedStartDate)
+      },
+      {
+        label: t('estimated_duration'),
+        value: !!workOrder?.estimatedDuration
+          ? t('estimated_hours_in_text', { hours: workOrder?.estimatedDuration })
+          : null
+      },
+      {
+        label: t('category'),
+        value: workOrder?.category?.name
+      }
+    ];
   const touchableFields: {
     label: string;
     value: string | number;
@@ -197,34 +193,34 @@ export default function WODetailsScreen({
     permissionEntity: PermissionEntity;
     address?: string;
   }[] = [
-    {
-      label: t('asset'),
-      value: workOrder?.asset?.name,
-      link: { route: 'AssetDetails', id: workOrder?.asset?.id },
-      permissionEntity: PermissionEntity.ASSETS
-    },
-    {
-      label: t('location'),
-      value: workOrder?.location?.name,
-      link: { route: 'LocationDetails', id: workOrder?.location?.id },
-      permissionEntity: PermissionEntity.LOCATIONS,
-      address: workOrder?.location?.address
-    },
-    {
-      label: t('team'),
-      value: workOrder?.team?.name,
-      link: { route: 'TeamDetails', id: workOrder?.team?.id },
-      permissionEntity: PermissionEntity.PEOPLE_AND_TEAMS
-    },
-    {
-      label: t('primary_worker'),
-      value: workOrder?.primaryUser
-        ? `${workOrder.primaryUser.firstName} ${workOrder.primaryUser.lastName}`
-        : null,
-      link: { route: 'UserDetails', id: workOrder?.primaryUser?.id },
-      permissionEntity: PermissionEntity.PEOPLE_AND_TEAMS
-    }
-  ];
+      {
+        label: t('asset'),
+        value: workOrder?.asset?.name,
+        link: { route: 'AssetDetails', id: workOrder?.asset?.id },
+        permissionEntity: PermissionEntity.ASSETS
+      },
+      {
+        label: t('location'),
+        value: workOrder?.location?.name,
+        link: { route: 'LocationDetails', id: workOrder?.location?.id },
+        permissionEntity: PermissionEntity.LOCATIONS,
+        address: workOrder?.location?.address
+      },
+      {
+        label: t('team'),
+        value: workOrder?.team?.name,
+        link: { route: 'TeamDetails', id: workOrder?.team?.id },
+        permissionEntity: PermissionEntity.PEOPLE_AND_TEAMS
+      },
+      {
+        label: t('primary_worker'),
+        value: workOrder?.primaryUser
+          ? `${workOrder.primaryUser.firstName} ${workOrder.primaryUser.lastName}`
+          : null,
+        link: { route: 'UserDetails', id: workOrder?.primaryUser?.id },
+        permissionEntity: PermissionEntity.PEOPLE_AND_TEAMS
+      }
+    ];
   const getInfos = () => {
     if (!workOrderProp) dispatch(getWorkOrderDetails(id));
     if (!generalPreferences.simplifiedWorkOrder) {
@@ -323,7 +319,7 @@ export default function WODetailsScreen({
   const getRunningTimerDuration = (labor: Labor) => {
     return durationToHours(
       labor.duration +
-        (new Date().getTime() - new Date(labor.startedAt).getTime()) / 1000
+      (new Date().getTime() - new Date(labor.startedAt).getTime()) / 1000
     );
   };
   const onDeleteSuccess = () => {
@@ -884,31 +880,31 @@ export default function WODetailsScreen({
                       PermissionEntity.WORK_ORDERS,
                       workOrder
                     ) && (
-                      <Fragment>
-                        <Divider style={{ marginTop: 5 }} />
-                        <Button
-                          onPress={() =>
-                            navigation.navigate('SelectParts', {
-                              onChange: (selectedParts) => {
-                                dispatch(
-                                  editWOPartQuantities(
-                                    id,
-                                    selectedParts.map((part) => part.id)
-                                  )
-                                ).catch((error) =>
-                                  showSnackBar(t('not_enough_part'), 'error')
-                                );
-                              },
-                              selected: partQuantities.map(
-                                (partQuantity) => partQuantity.part.id
-                              )
-                            })
-                          }
-                        >
-                          {t('add_parts')}
-                        </Button>
-                      </Fragment>
-                    )}
+                        <Fragment>
+                          <Divider style={{ marginTop: 5 }} />
+                          <Button
+                            onPress={() =>
+                              navigation.navigate('SelectParts', {
+                                onChange: (selectedParts) => {
+                                  dispatch(
+                                    editWOPartQuantities(
+                                      id,
+                                      selectedParts.map((part) => part.id)
+                                    )
+                                  ).catch((error) =>
+                                    showSnackBar(t('not_enough_part'), 'error')
+                                  );
+                                },
+                                selected: partQuantities.map(
+                                  (partQuantity) => partQuantity.part.id
+                                )
+                              })
+                            }
+                          >
+                            {t('add_parts')}
+                          </Button>
+                        </Fragment>
+                      )}
                   </View>
                   <View style={styles.shadowedCard}>
                     <Text
@@ -962,27 +958,27 @@ export default function WODetailsScreen({
                       PermissionEntity.WORK_ORDERS,
                       workOrder
                     ) && (
-                      <Fragment>
-                        <Divider style={{ marginTop: 5 }} />
-                        <Button
-                          disabled={
-                            !(
-                              hasEditPermission(
-                                PermissionEntity.WORK_ORDERS,
-                                workOrder
-                              ) && hasFeature(PlanFeature.ADDITIONAL_COST)
-                            )
-                          }
-                          onPress={() =>
-                            navigation.push('AddAdditionalCost', {
-                              workOrderId: workOrder.id
-                            })
-                          }
-                        >
-                          {t('add_additional_cost')}
-                        </Button>
-                      </Fragment>
-                    )}
+                        <Fragment>
+                          <Divider style={{ marginTop: 5 }} />
+                          <Button
+                            disabled={
+                              !(
+                                hasEditPermission(
+                                  PermissionEntity.WORK_ORDERS,
+                                  workOrder
+                                ) && hasFeature(PlanFeature.ADDITIONAL_COST)
+                              )
+                            }
+                            onPress={() =>
+                              navigation.push('AddAdditionalCost', {
+                                workOrderId: workOrder.id
+                              })
+                            }
+                          >
+                            {t('add_additional_cost')}
+                          </Button>
+                        </Fragment>
+                      )}
                   </View>
                 </View>
               )}
@@ -1107,11 +1103,9 @@ export default function WODetailsScreen({
                               ? `${labor.assignedTo.firstName} ${labor.assignedTo.lastName}`
                               : t('not_assigned')
                           }
-                          description={`${
-                            getHoursAndMinutesAndSeconds(labor.duration)[0]
-                          }h ${
-                            getHoursAndMinutesAndSeconds(labor.duration)[1]
-                          }m`}
+                          description={`${getHoursAndMinutesAndSeconds(labor.duration)[0]
+                            }h ${getHoursAndMinutesAndSeconds(labor.duration)[1]
+                            }m`}
                         />
                       ))}
 
@@ -1119,27 +1113,27 @@ export default function WODetailsScreen({
                       PermissionEntity.WORK_ORDERS,
                       workOrder
                     ) && (
-                      <Fragment>
-                        <Divider style={{ marginTop: 5 }} />
-                        <Button
-                          disabled={
-                            !(
-                              hasEditPermission(
-                                PermissionEntity.WORK_ORDERS,
-                                workOrder
-                              ) && hasFeature(PlanFeature.ADDITIONAL_TIME)
-                            )
-                          }
-                          onPress={() =>
-                            navigation.push('AddAdditionalTime', {
-                              workOrderId: workOrder.id
-                            })
-                          }
-                        >
-                          {t('add_time')}
-                        </Button>
-                      </Fragment>
-                    )}
+                        <Fragment>
+                          <Divider style={{ marginTop: 5 }} />
+                          <Button
+                            disabled={
+                              !(
+                                hasEditPermission(
+                                  PermissionEntity.WORK_ORDERS,
+                                  workOrder
+                                ) && hasFeature(PlanFeature.ADDITIONAL_TIME)
+                              )
+                            }
+                            onPress={() =>
+                              navigation.push('AddAdditionalTime', {
+                                workOrderId: workOrder.id
+                              })
+                            }
+                          >
+                            {t('add_time')}
+                          </Button>
+                        </Fragment>
+                      )}
                   </View>
                   {!!currentWorkOrderHistories.length && (
                     <View style={styles.shadowedCard}>
