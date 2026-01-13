@@ -67,21 +67,12 @@ const AssetCard = ({
       }
     >
       <Card.Content>
-        <View style={{ ...styles.row, justifyContent: 'space-between' }}>
-          <View style={{ ...styles.row, justifyContent: 'space-between' }}>
-            <View style={{ marginRight: 10 }}>
-              <Tag
-                text={`#${asset.customId}`}
-                color="white"
-                backgroundColor="#545454"
-              />
-            </View>
-            <Tag
-              text={t(asset?.status)}
-              backgroundColor={getAssetStatusConfig(asset?.status).color(theme)}
-              color="white"
-            />
-          </View>
+        <View style={{ ...styles.row, justifyContent: 'flex-start' }}>
+          <Tag
+            text={t(asset?.status)}
+            backgroundColor={getAssetStatusConfig(asset?.status).color(theme)}
+            color="white"
+          />
         </View>
         <View style={{ marginTop: 10, marginBottom: 5 }}>
           <Text variant="titleLarge" style={{ fontWeight: 'bold' }}>

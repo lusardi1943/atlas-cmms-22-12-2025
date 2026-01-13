@@ -203,15 +203,8 @@ export default function LocationsScreen({
                     titleStyle={{ fontWeight: 'bold' }}
                     title={location.name}
                     description={location.address}
-                    right={(props) => (
-                      <View>
-                        <Tag
-                          text={`#${location.customId}`}
-                          color="white"
-                          backgroundColor="#545454"
-                        />
-                      </View>
-                    )}
+                    titleNumberOfLines={0}
+                    descriptionNumberOfLines={0}
                   />
                 </Card.Content>
               </Card>
@@ -260,15 +253,8 @@ export default function LocationsScreen({
                     titleStyle={{ fontWeight: 'bold' }}
                     title={location.name}
                     description={location.address}
-                    right={(props) => (
-                      <View>
-                        <Tag
-                          text={`#${location.customId}`}
-                          color="white"
-                          backgroundColor="#545454"
-                        />
-                      </View>
-                    )}
+                    titleNumberOfLines={0}
+                    descriptionNumberOfLines={0}
                   />
                 </Card.Content>
                 <Card.Actions>
