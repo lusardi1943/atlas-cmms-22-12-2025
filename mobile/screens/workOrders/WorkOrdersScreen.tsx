@@ -287,17 +287,12 @@ export default function WorkOrdersScreen({
                   }
                 >
                   <Card.Content>
-                    {/* Header: Title, ID, and Status */}
+                    {/* Header: ID and Status */}
                     <View style={styles.cardHeader}>
-                      <View>
-                        <Text variant="titleMedium" style={styles.cardTitle}>
-                          {workOrder.title}
-                        </Text>
-                        <Text
-                          variant={'bodySmall'}
-                          style={{ color: 'grey' }}
-                        >{`#${workOrder.customId}`}</Text>
-                      </View>
+                      <Text
+                        variant={'bodySmall'}
+                        style={{ color: 'grey', fontWeight: 'bold' }}
+                      >{`#${workOrder.customId}`}</Text>
                       <Tag
                         text={t(workOrder.status)}
                         color="white"
@@ -307,6 +302,10 @@ export default function WorkOrdersScreen({
                         )}
                       />
                     </View>
+                    {/* Title */}
+                    <Text variant="titleMedium" style={styles.cardTitle}>
+                      {workOrder.title}
+                    </Text>
                     {/* Body: Asset and Location */}
                     <View style={styles.cardBody}>
                       {workOrder.asset && (
