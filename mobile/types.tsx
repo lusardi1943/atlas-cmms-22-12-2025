@@ -100,6 +100,7 @@ export type RootStackParamList = {
     onChange: (locations: LocationMiniDTO[]) => void;
     selected: number[];
     multiple: boolean;
+    leafOnly?: boolean;
   };
   SelectAssets: {
     onChange: (assets: AssetMiniDTO[]) => void;

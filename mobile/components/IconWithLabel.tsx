@@ -1,8 +1,7 @@
 import { IconSource } from 'react-native-paper/lib/typescript/components/Icon';
 import { StyleSheet, View } from 'react-native';
-import { Icon, IconButton, Text, useTheme } from 'react-native-paper';
+import { Icon, Text } from 'react-native-paper';
 import * as React from 'react';
-import { Variant } from 'react-native-paper/lib/typescript/components/Typography/types';
 
 export function IconWithLabel({
   icon,
@@ -14,7 +13,7 @@ export function IconWithLabel({
   icon: IconSource;
   label: string;
   color?: string;
-  labelVariant?: Variant;
+  labelVariant?: React.ComponentProps<typeof Text>['variant'];
   iconSize?: number;
 }) {
   return (
